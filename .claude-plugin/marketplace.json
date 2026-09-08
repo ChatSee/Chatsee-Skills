@@ -1,0 +1,11 @@
+{
+  "name": "chatsee",
+  "owner": { "name": "ChatSee", "email": "team@chatsee.ai" },
+  "plugins": [
+    {
+      "name": "chatsee-skills",
+      "source": "./",
+      "description": "Monitor and fix your AI agent from your coding agent — telemetry setup, Guardian queries, prompt remediations, and code-level fixes over one ChatSee MCP, with a startup check that surfaces recent failures on session open."
+    }
+  ]
+}
