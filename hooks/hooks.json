@@ -1,8 +1,5 @@
 {
-  "//": "SessionStart hook for the ChatSee Skills plugin. On session open it runs the startup",
-  "//check": "check, which asks the Guardian for the agent's recent failures + clusters and surfaces",
-  "//env": "them. Needs CHATSEE_MCP_KEY and CHATSEE_AGENT in the environment (same as the MCP).",
-  "//path": "${CLAUDE_PLUGIN_ROOT} resolves to the plugin's install dir; python must be on PATH.",
+  "description": "SessionStart hook: runs the startup check, which asks the Guardian for the agent's recent failures and surfaces them. Needs CHATSEE_MCP_KEY and CHATSEE_AGENT in the environment (same as the MCP); python must be on PATH.",
   "hooks": {
     "SessionStart": [
       {
