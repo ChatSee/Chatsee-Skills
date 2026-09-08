@@ -8,6 +8,5 @@
   "repository": "https://github.com/ChatSee/Chatsee-Skills",
   "keywords": ["chatsee", "observability", "agent-reliability", "remediation", "guardian", "mcp"],
   "skills": "./.claude/skills/",
-  "mcpServers": "./.mcp.json",
-  "hooks": "./hooks/hooks.json"
+  "mcpServers": "./.mcp.json"
 }
