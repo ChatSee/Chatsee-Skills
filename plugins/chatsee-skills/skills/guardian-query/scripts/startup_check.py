@@ -8,8 +8,10 @@ after the traffic that caused it, so the moment a developer opens their editor i
 first time the answer even exists.
 
     usage:  startup_check.py [--agent "<name>"] [--hours N] [--timeout S] [--stdout] [--only <keys>]
-            keys:  failures, clusters, recent, severity, health, sentiment, impact
-            default set: failures + clusters   (others are opt-in via --only)
+            keys:  failures, topcode, clusters, recent, severity, escalations   (reliable)
+                   volume, health, sentiment, impact                            (arithmetic, opt-in)
+            default set: failures, topcode, clusters, recent, severity, escalations
+            fast preset: --only failures,topcode,escalations   (single-fact, snappiest)
 
 Wiring (opt-in — see guardian-query/SKILL.md):
 
@@ -55,30 +57,41 @@ DEFAULT_HOURS = 24
 # trades a little startup latency for instant answers — the server-side cache (tracked separately)
 # is what removes that latency. Trim the set at runtime with `--only <key>[,<key>]`.
 STARTUP_QUERIES = (
-    # reliable — about the error CODES and their grouping (the Guardian gets these right)
+    # reliable — about the error CODES and their grouping (the Guardian gets these right).
+    # `failures` stays FIRST because it is the GATE (see GATE_KEY): a healthy agent goes silent after
+    # this one call. `topcode`/`escalations` are FAST: single-fact, one-line answers, cheap to add.
     ("failures", "which error codes have been detected? Answer in at most 6 lines as "
                  "`CODE  name  count`, most frequent first."),
+    ("topcode",  "which single error code is most frequent? One line only: `CODE  name  count`."),
     ("clusters", "what are the top 3 recurring error clusters or themes? One short line each, "
                  "naming the error codes they cover."),
     ("recent",   "which error codes were detected most recently? Newest first, one short line each."),
     ("severity", "which of the detected errors are the most severe or critical? Worst first, one "
                  "short line each with the code and why it matters."),
-    # aggregate / sentiment — the Guardian's numbers here are less reliable; opt-in via --only
+    ("escalations", "were there any escalations? One line: yes or no, with the count if yes."),
+    # aggregate / arithmetic — the Guardian's numbers here are less reliable; opt-in via --only.
+    # `volume` is fast (one line) but is still a count, so it stays opt-in with the other arithmetic.
+    ("volume",   "how many failures in total, and across how many distinct error codes? One line."),
     ("health",   "give a one-line health summary: the overall error rate and whether there were escalations."),
     ("sentiment","how is user sentiment trending? Answer in one short line."),
     ("impact",   "which error codes affect the most conversations? Worst first, one short line each."),
 )
 _LABELS = {
-    "failures": "Failures", "clusters": "Clusters", "recent": "Most recent", "severity": "Severity",
-    "health": "Health", "sentiment": "Sentiment", "impact": "Impact",
+    "topcode": "Top error", "failures": "Failures", "clusters": "Clusters", "recent": "Most recent",
+    "severity": "Severity", "escalations": "Escalations", "volume": "Volume", "health": "Health",
+    "sentiment": "Sentiment", "impact": "Impact",
 }
 
-# Default startup set — kept small because each key is a live Guardian call, so more keys = slower
-# start (the server-side cache, tracked separately, is what lets the default widen without the
-# latency). The reliable code-based queries `failures`, `clusters`, `recent`, `severity` are safe
-# to add here; the aggregate/sentiment ones (`health`, `sentiment`, `impact`) are best left opt-in
-# until the Guardian's arithmetic is trusted. Run any subset at will with `--only <key>,<key>`.
-DEFAULT_KEYS = ("failures", "clusters")
+# Default startup set — the full RELIABLE tier, so one session-start covers almost every code-based
+# question a developer asks and each is then instant to answer from context (no live call). The
+# trade is startup latency: each key is a live Guardian call run in sequence (they reuse one
+# conversation, so follow-ups are cheaper than the cold gate call), and the server-side cache
+# (tracked separately) is what removes that cost. The code-based queries `failures`, `topcode`,
+# `clusters`, `recent`, `severity`, `escalations` are safe here; the arithmetic ones (`volume`,
+# `health`, `sentiment`, `impact`) stay opt-in until the Guardian's counts are trusted.
+#   Fast preset (single-fact, snappiest):  --only failures,topcode,escalations
+#   Run any subset at will:                --only <key>,<key>
+DEFAULT_KEYS = ("failures", "topcode", "clusters", "recent", "severity", "escalations")
 
 # `failures` is the GATE: if it reports nothing, the agent is healthy and startup stays silent.
 # It is asked with a NONE escape so 'no failures' is detectable; the softer queries are asked

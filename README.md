@@ -1,119 +1,180 @@
-# ChatSee — Claude Code skills for agent self-improvement
+<div align="center">
 
-Four **Claude Code skills** that let a developer improve a monitored **deployed** AI agent
-using ChatSee's **Guardian**, without leaving their editor:
+# ChatSee Skills
 
-1. **`telemetry-setup`** — instrument the agent so each turn streams to the Guardian.
-2. **`remediation`** — pull the Guardian's approved prompt-fixes and apply them.
-3. **`structural-correction`** — Claude diagnoses deeper *code* bugs and proposes fixes.
-4. **`guardian-query`** — ask the Guardian, in plain English, what's going wrong.
+**Monitor your AI agent — and fix its failures — without leaving your coding agent.**
 
-**The loop:** observe → ask what's wrong → remediate the prompt → correct the code → repeat.
+Detect prompt-level and code-level failures in a deployed AI agent through ChatSee's **Guardian**,
+then remediate them in place. Installs as a plugin into **Claude Code** and **Codex** over a single MCP.
 
-Every step is **transparent and developer-invoked** — the developer asks, sees the evidence,
-and approves the change. That is deliberate: a coding agent adopts guidance it can see and
-judge, and refuses instructions covertly injected into its context, so the fixes are surfaced
-rather than silently applied.
+[![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-6C4BF6)](#-claude-code)
+[![Codex](https://img.shields.io/badge/Codex-plugin-10A37F)](#-codex)
+[![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#prerequisites)
+[![MCP](https://img.shields.io/badge/protocol-MCP-000000)](#prerequisites)
+[![Site](https://img.shields.io/badge/chatsee.ai-000000)](https://chatsee.ai)
 
-👉 Full detail, architecture, and live-test results: **[`BRIEF.md`](BRIEF.md)**.
+</div>
 
-## Install (into your own agent's repo)
+---
 
-Copy one directory in, add one config file, open Claude Code. That is the whole install.
+## What you get
+
+Four skills, one MCP, one loop — **observe → ask what's wrong → fix the prompt → fix the code → repeat.**
+
+| Skill | What it does |
+|-------|--------------|
+| 🛰️ **`telemetry-setup`** | Instrument your agent so each turn streams to the Guardian. |
+| 🩹 **`remediation`** | Pull the Guardian's approved prompt-fixes and apply them. |
+| 🛠️ **`structural-correction`** | Diagnose deeper *code* bugs and propose fixes. |
+| 🔎 **`guardian-query`** | Ask the Guardian, in plain English, what's going wrong. |
+
+Every step is **transparent and developer-invoked** — you ask, see the evidence, and approve the change. Nothing is applied silently.
+
+> 💡 **On session start**, the plugin surfaces what your agent broke recently — no need to think to ask. See [Startup check](#-startup-check).
+
+---
+
+## Prerequisites
+
+Before installing, make sure you have:
+
+- **Python 3.9+** — the skills carry their own client; skills 2/3/4 need **no third-party packages**.
+- **A ChatSee MCP key** — `cs-live-…`, bound to one agent. Ask the ChatSee team.
+- **The `chatsee-ai` SDK** — only needed for `telemetry-setup` (skill 1):
+  ```bash
+  pip install chatsee-ai
+  ```
+
+Set the key as an environment variable so the plugin's MCP can read it (never commit it):
+
+```bash
+# macOS / Linux
+export CHATSEE_MCP_KEY="cs-live-<tenant>-<secret>"
+export CHATSEE_AGENT="Your Agent Name"          # quote it — names have spaces
+```
+```powershell
+# Windows (PowerShell) — persists across sessions
+setx CHATSEE_MCP_KEY "cs-live-<tenant>-<secret>"
+setx CHATSEE_AGENT   "Your Agent Name"
+```
+
+See the full variable list in [Configuration](#configuration).
+
+---
+
+## Install
+
+### 🟣 Claude Code
+
+Run these **inside Claude Code** (start it with `claude`, then type the commands at the prompt):
+
+```text
+/plugin marketplace add ChatSee/Chatsee-Skills
+/plugin install chatsee-skills@chatsee
+```
+
+Restart when prompted. Confirm with `/plugin` → the skills and the `chatsee` MCP server should show as active.
+
+<sub>Private repo? Claude Code uses your existing `git` authentication, so no extra step is needed.</sub>
+
+### 🟢 Codex
+
+Run these **in your terminal** (Codex **v0.117+**):
+
+```bash
+codex plugin marketplace add ChatSee/Chatsee-Skills
+codex plugin add chatsee-skills@chatsee
+codex plugin list        # should show chatsee-skills — installed, enabled
+```
+
+Open a Codex session — the skills and the `chatsee` MCP tools (`ask_guardian`, `get_remediations`, `apply_remediations`) load automatically.
+
+<details>
+<summary><b>Manual install (any editor, no plugin system)</b></summary>
+
+Copy the skills into your agent's repo and add a `.env`:
 
 ```bash
 cp -R /path/to/ChatSee-Skills/.claude/skills  <your-repo>/.claude/skills
 ```
 
-Then create `.env` at your repo root with the ids and key ChatSee gave you — see
-[`.env.example`](.env.example) for the full list — and **add `.env` to `.gitignore`**: it holds
-a live key.
+Create `.env` at your repo root (see [`.env.example`](.env.example)), **add it to `.gitignore`**, then start your coding agent from that repo — that's how it discovers the skills.
+</details>
+
+---
+
+## 🚀 Startup check
+
+On every session start, the plugin runs a **predefined startup query set** against the Guardian and surfaces your agent's recent status — so you learn it's been failing without having to ask.
+
+- **Default set (6 queries):** `failures` · `topcode` · `clusters` · `recent` · `severity` · `escalations` — covers almost every code-based question, and each answer is then **instant** to reuse during the session.
+- **Stays silent when healthy:** `failures` is the gate — if there's nothing to report, startup prints nothing.
+- **Fast preset** for a snappy start: single-fact queries only.
 
 ```bash
-cd <your-repo> && claude
+# fast preset — snappiest start
+python .claude/skills/guardian-query/scripts/startup_check.py --only failures,topcode,escalations
+
+# any subset, any window
+python .claude/skills/guardian-query/scripts/startup_check.py --only severity,impact --hours 168
 ```
 
-The skills carry their own shared client in `_shared/`, need **no third-party packages** for
-skills 2/3/4, and run on **Python 3.9+**. Only skill 1 needs the `chatsee-ai` SDK, installed
-into whatever interpreter your agent runs on. Start Claude Code from the repo the skills live
-in — that is how it discovers them.
+| Tier | Keys | Notes |
+|------|------|-------|
+| **Reliable** (default) | `failures` `topcode` `clusters` `recent` `severity` `escalations` | code-based; trusted |
+| **Arithmetic** (opt-in) | `volume` `health` `sentiment` `impact` | counts less reliable — enable with `--only` |
 
-**Optional third step — recent failures on startup.** Add this to `.claude/settings.json` and
-each session begins by telling you what your agent broke in the last 24 hours. It is the only
-part of the install that is not a file copy, and the only part that pushes rather than waits
-to be asked:
+> The startup set runs live Guardian calls in sequence, so a wider default trades a little startup latency for instant in-session answers. Full detail in [`guardian-query/SKILL.md`](.claude/skills/guardian-query/SKILL.md).
 
-```json
-{"hooks": {"SessionStart": [{"hooks": [{
-  "type": "command",
-  "command": "python3 .claude/skills/guardian-query/scripts/startup_check.py",
-  "async": true, "timeout": 60}]}]}}
-```
+---
 
-It runs in the background, so it never delays a session, and it stays silent unless there is
-something to say. Detail in `guardian-query/SKILL.md`.
+## Usage
 
-Everything runs **live against the real ChatSee Guardian** — there is no mock.
+Just talk to your coding agent:
 
-## Run it
+- *"What's my agent breaking today?"*
+- *"Pull the latest remediations and apply them."*
+- *"Why is error code E-402 happening?"*
 
-Just talk to Claude — see **[`DEMO.md`](DEMO.md)** for the six things to ask. `RUN.md` lists the
-underlying commands if you would rather drive them yourself.
+See **[`DEMO.md`](DEMO.md)** for a scripted walkthrough, and **[`RUN.md`](RUN.md)** for the underlying commands.
 
-**Scope, honestly:** skills 1, 2, and 4 run end to end. Skill 3 is **propose-only** — it
-pulls the code-level failures and Claude drafts a fix, but nothing reports that fix back to
-the Guardian, so there is no regression tracking yet. The loop is closed for *prompt* fixes
-and open for *code* fixes. See [`ASSESSMENT.md`](ASSESSMENT.md) for the full gap list.
+Guardian calls take **~10–60s** (`ask_guardian` is agentic). Narrow questions and shorter windows answer faster; the startup set pre-fetches the common ones so they're instant.
 
-Guardian calls take ~10–60s (`ask_guardian` is agentic).
+---
 
-## Machine-wide config — one place for the model key
+## Configuration
 
-Test agents need a model API key. **Do not export it in your shell.** Anything launched from
-that shell inherits it, including Claude Code, which redirects subscription billing to that key.
+Env only — **never hardcode keys.**
 
-Put it in `~/.config/chatsee/agent.env` instead (mode `0600`):
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Every project's skills read it as a fallback, and any agent can too:
-
-```python
-load_dotenv()                                                   # ./.env — this agent
-load_dotenv(os.path.expanduser("~/.config/chatsee/agent.env"))  # machine-wide secrets
-```
-
-**Precedence, highest first:** real environment variables → the project's `.env` →
-`~/.config/chatsee/agent.env`. So a per-project override always wins, and the machine-wide file
-only fills gaps.
-
-**The machine-wide file may not identify an agent.** `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`,
-`CHATSEE_MCP_KEY` and `CHATSEE_AGENT` are refused from it, with a warning. A global default for
-*which agent this is* would silently point every project at one agent — the same class of bug as
-`VALIDATION.md` F1, one level up. Machine-wide holds what is true of the machine; the project
-holds what is true of the agent.
-
-## Config (env only — never hardcode keys)
-
-| Var | Used by | Purpose |
-|-----|---------|---------|
+| Variable | Used by | Purpose |
+|----------|---------|---------|
 | `CHATSEE_MCP_KEY` | skills 2/3/4 | Guardian MCP key (`cs-live-…`), bound to one agent |
 | `CHATSEE_MCP_URL` | skills 2/3/4 | MCP endpoint (e.g. `https://gcp-demo.chatsee.ai/mcp/`) |
 | `CHATSEE_AGENT` | skills 3/4 | agent name to scope queries to (**quote it** — names have spaces) |
 | `CHATSEE_MCP_TIMEOUT` | skills 2/3/4 | per-call seconds (default 300) |
 | `CHATSEE_AGENT_ID` / `CHATSEE_TENANT_ID` / `CHATSEE_ENV` | skill 1 | the agent's IDs + environment (`dev`\|`qa`\|`demo`\|`poc`) |
 
-## Layout
+**Model API keys** belong in `~/.config/chatsee/agent.env` (mode `0600`) — **not** your shell, or Claude Code inherits it and redirects subscription billing. Precedence, highest first: real env vars → project `.env` → machine-wide file.
 
-```
-.claude/skills/<name>/         the four skills (SKILL.md + thin scripts) — the product
-.claude/skills/_shared/          guardian_client.py + env_config.py, shared by all four skills
-examples/live_demo.py          the full loop, live (all four skills in sequence)
-examples/sample_agent/         fixture with a structural bug + skill-3 PROPOSED_FIX.md
-```
+---
 
-## Notes
-- Python 3.9+ (the skills are pinned to it so they run in any repo). No secrets committed; keys live in `.env` (gitignored). Every commit is secret-scanned.
-- Skill 1 uses the official `chatsee-ai` SDK (keyless); skills 2/3/4 use the Guardian MCP.
+## Scope, honestly
+
+Skills **1, 2, and 4 run end to end.** Skill 3 (`structural-correction`) is **propose-only** — it pulls code-level failures and drafts a fix, but nothing reports that fix back to the Guardian yet, so there's no regression tracking. The loop is **closed for prompt fixes, open for code fixes.** Full gap list in [`ASSESSMENT.md`](ASSESSMENT.md).
+
+Everything runs **live against the real ChatSee Guardian** — there is no mock.
+
+---
+
+## Learn more
+
+| Doc | What's in it |
+|-----|--------------|
+| [`BRIEF.md`](BRIEF.md) | Architecture, design rationale, live-test results |
+| [`DEMO.md`](DEMO.md) | Scripted demo — the things to ask |
+| [`ASSESSMENT.md`](ASSESSMENT.md) | Honest gap analysis |
+| [`VALIDATION.md`](VALIDATION.md) | Test evidence |
+
+<div align="center">
+<sub>Built by <a href="https://chatsee.ai">ChatSee</a> · No secrets committed — keys live in env, never in the repo.</sub>
+</div>
