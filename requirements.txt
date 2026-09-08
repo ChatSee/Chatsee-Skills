@@ -1,0 +1,19 @@
+# Skill 1 — telemetry (official SDK, primary path).
+# Pinned: every documented call signature here is specific to 0.10.x (keyless constructor).
+chatsee-ai==0.12.1
+
+# examples/marketing_agent.py — a real LLM-backed test agent (Anthropic tool-use loop)
+anthropic>=0.40
+
+# Tests (offline, no network)
+pytest>=8.0
+
+# Skill 1 OTLP alternative (agent_telemetry.py, for OpenTelemetry-native stacks).
+# UNTESTED: these helpers have no callers yet — see ASSESSMENT.md before relying on them.
+opentelemetry-api>=1.30
+opentelemetry-sdk>=1.30
+opentelemetry-exporter-otlp-proto-http>=1.30
+
+# NOTE: skills 2/3/4 speak MCP over plain urllib (guardian/guardian_client.py) and need no
+# extra package. The `mcp` library is only required if you call the chatsee-ai SDK's own
+# fetch_remediations helper, which this repo does not.

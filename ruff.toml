@@ -1,0 +1,51 @@
+# Repo config. Mirrors the user-level default deliberately, with ONE change: target-version.
+#
+# **target-version is py39, and that is load-bearing.** The four skills get dropped into other
+# people's repositories and must run on whatever interpreter those repos already use. With a
+# newer target, pyupgrade (UP) "modernises" the code to syntax an older interpreter rejects:
+# `timezone.utc` became `from datetime import UTC` (3.11+) and a customer on Python 3.9 got an
+# ImportError before a single skill ran. Raise this only if the skills stop needing to be
+# portable — verify with:
+#   for f in $(find .claude/skills -name '*.py'); do python3.9 -m py_compile "$f"; done
+#
+# The rest is copied rather than inherited so this repo is self-describing for anyone who
+# clones it, and so the *.md exclusion below cannot be lost.
+
+line-length = 100
+target-version = "py39"
+
+# *.md excluded deliberately: ruff formats Python inside Markdown code fences, which rewrites
+# the SKILL.md snippets a developer is meant to copy. Docs are prose.
+extend-exclude = ["migrations", ".venv", "venv", "node_modules", "build", "dist", "*.md"]
+
+[lint]
+select = [
+    "F",    # pyflakes      — real bugs: unused imports, undefined names
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # isort         — import ordering (autofixable)
+    "UP",   # pyupgrade     — modernize syntax, bounded by target-version above
+    "B",    # bugbear       — mutable defaults, shadowed loop vars, etc.
+    "C4",   # comprehensions
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+]
+
+ignore = [
+    "E501",    # line length — the formatter owns layout
+    "B008",    # function call in default arg: normal for FastAPI Depends()
+    "RUF012",  # mutable ClassVar annotation — noisy on pydantic-style code
+    # RUF100 flags a `# noqa` as unused whenever this config doesn't enable the rule it
+    # silences, which deletes comments other linters still need — ruff's E402 tolerates
+    # sys.path edits before imports, flake8 does not, so `# noqa: E402` is load-bearing.
+    "RUF100",
+]
+
+[lint.per-file-ignores]
+"**/tests/**" = ["B011"]
+"**/test_*.py" = ["B011"]
+"__init__.py" = ["F401"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

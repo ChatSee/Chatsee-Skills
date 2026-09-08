@@ -1,0 +1,22 @@
+{
+  "//": "ChatSee SessionStart hook for CODEX. Copy this to ~/.codex/hooks.json (or merge the",
+  "//merge": "hooks table into ~/.codex/config.toml). Codex injects the command's stdout into the",
+  "//stdout": "session as context, so startup_check.py is run with --stdout (prints to stdout, exit 0).",
+  "//launch": "Launch codex from the ChatSee-Skills folder so its .env (CHATSEE_MCP_KEY + CHATSEE_AGENT) loads.",
+  "//path": "The command path is absolute because ~/.codex/hooks.json is global; edit it to your machine.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/shubham.kapse/Documents/Demo/ChatSee-Skills-main/ChatSee-Skills-main/.claude/skills/guardian-query/scripts/startup_check.py --stdout",
+            "statusMessage": "Checking ChatSee for recent failures",
+            "additionalContextLimit": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
