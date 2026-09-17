@@ -1,12 +1,12 @@
 {
-  "description": "SessionStart hook: runs the startup check, which asks the Guardian for the agent's recent failures and surfaces them. Needs CHATSEE_MCP_KEY and CHATSEE_AGENT in the environment (same as the MCP); python must be on PATH.",
+  "description": "SessionStart hook: asks the Guardian for the agent's recent failures and surfaces them. Needs CHATSEE_MCP_KEY and CHATSEE_AGENT in the environment; python must be on PATH.",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python -u \"${CLAUDE_PLUGIN_ROOT}/.claude/skills/guardian-query/scripts/startup_check.py\""
+            "command": "python -u \"${CLAUDE_PLUGIN_ROOT}/skills/guardian-query/scripts/startup_check.py\""
           }
         ]
       }

@@ -1,11 +1,19 @@
 {
   "name": "chatsee",
-  "interface": { "displayName": "ChatSee Skills" },
+  "interface": {
+    "displayName": "ChatSee Skills"
+  },
   "plugins": [
     {
       "name": "chatsee-skills",
-      "source": { "source": "local", "path": "./plugins/chatsee-skills" },
-      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
       "category": "Developer Tools"
     }
   ]

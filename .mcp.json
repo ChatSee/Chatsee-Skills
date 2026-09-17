@@ -1,7 +1,4 @@
 {
-  "//": "ChatSee Recommendations MCP server (powers skill 2). The key is read from the",
-  "//key": "CHATSEE_MCP_KEY env var — do NOT hardcode it here. Export it, then reload",
-  "//reload": "Claude Code so `get_remediations` / `apply_remediations` appear as tools.",
   "mcpServers": {
     "chatsee": {
       "type": "http",

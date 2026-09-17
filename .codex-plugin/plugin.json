@@ -1,0 +1,26 @@
+{
+  "name": "chatsee-skills",
+  "version": "1.0.0",
+  "description": "Monitor your AI agent with ChatSee and fix its failures — prompt-level and code-level — from your coding agent. Telemetry setup, Guardian queries, remediations, and structural code fixes over one MCP, plus a startup check that surfaces recent failures.",
+  "author": {
+    "name": "ChatSee",
+    "url": "https://chatsee.ai"
+  },
+  "homepage": "https://github.com/ChatSee/Chatsee-Skills",
+  "repository": "https://github.com/ChatSee/Chatsee-Skills",
+  "keywords": [
+    "chatsee",
+    "observability",
+    "agent-reliability",
+    "remediation",
+    "guardian",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "ChatSee Skills",
+    "shortDescription": "Detect and fix your AI agent's failures from your coding agent.",
+    "category": "Developer Tools"
+  }
+}

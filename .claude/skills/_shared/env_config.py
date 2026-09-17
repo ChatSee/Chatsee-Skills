@@ -13,7 +13,8 @@ exported; the file only supplies what is absent.
 
 Sources, highest precedence first:
   1. the real environment
-  2. `$CHATSEE_ENV_FILE`, or `.env` in the project root (the directory holding `.claude/`)
+  2. `$CHATSEE_ENV_FILE`, or `.env` in the project root (the nearest directory above these
+     scripts holding a host marker — `.claude/`, `.cursor/`, `.gemini/`, `.codex/`, `.chatsee/`)
   3. `~/.config/chatsee/agent.env` — machine-wide, shared by every project on this machine
 
 Source 3 exists for secrets that are yours rather than the project's — an `ANTHROPIC_API_KEY`
@@ -45,12 +46,28 @@ _loaded_from: list[str] = []
 _done = False
 
 
+# Directories a coding agent creates in the project it is working on. Any one of them marks
+# the project root. `.chatsee` is ours: a host we don't know about yet (or a bare checkout)
+# can drop an empty `.chatsee/` directory to say "the project root is here".
+#
+# Do NOT narrow this back to `.claude` alone. These skills ship to Claude Code, Codex, Cursor
+# and Gemini CLI; under the last two there is no `.claude/` anywhere above the scripts, so a
+# `.claude`-only search returns None, the `.env` fallback silently stops loading, and every
+# script fails with "set CHATSEE_…" even though the developer's config is right there.
+HOST_MARKERS = (".chatsee", ".claude", ".cursor", ".gemini", ".codex", ".agents")
+
+
 def _project_root() -> str | None:
-    """Walk up from this file looking for the directory that holds `.claude/`."""
+    """Walk up from this file looking for a directory that holds a known host marker.
+
+    Markers are checked host-agnostically at each level, so the nearest project root wins
+    regardless of which agent created it.
+    """
     d = os.path.dirname(os.path.abspath(__file__))
     while True:
-        if os.path.isdir(os.path.join(d, ".claude")):
-            return d
+        for marker in HOST_MARKERS:
+            if os.path.isdir(os.path.join(d, marker)):
+                return d
         parent = os.path.dirname(d)
         if parent == d:
             return None

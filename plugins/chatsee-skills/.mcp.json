@@ -1,6 +1,0 @@
-{
-  "chatsee": {
-    "url": "https://gcp-demo.chatsee.ai/mcp/",
-    "bearer_token_env_var": "CHATSEE_MCP_KEY"
-  }
-}

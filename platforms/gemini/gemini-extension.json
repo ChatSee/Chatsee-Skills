@@ -1,0 +1,41 @@
+{
+  "name": "chatsee-skills",
+  "version": "1.0.0",
+  "description": "Monitor your AI agent with ChatSee and fix its failures — prompt-level and code-level — from your coding agent. Telemetry setup, Guardian queries, remediations, and structural code fixes over one MCP, plus a startup check that surfaces recent failures.",
+  "mcpServers": {
+    "chatsee": {
+      "httpUrl": "https://gcp-demo.chatsee.ai/mcp/",
+      "headers": {
+        "Authorization": "Bearer $CHATSEE_MCP_KEY"
+      },
+      "timeout": 30000
+    }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ${extensionPath}${/}skills/guardian-query/scripts/startup_check.py --stdout"
+          }
+        ]
+      }
+    ]
+  },
+  "settings": [
+    {
+      "name": "ChatSee MCP key",
+      "description": "Your ChatSee MCP key, from the agent's page in the ChatSee dashboard.",
+      "envVar": "CHATSEE_MCP_KEY",
+      "sensitive": true
+    },
+    {
+      "name": "ChatSee agent name",
+      "description": "Which monitored agent this project is. Scopes every skill and the startup check.",
+      "envVar": "CHATSEE_AGENT",
+      "sensitive": false
+    }
+  ]
+}

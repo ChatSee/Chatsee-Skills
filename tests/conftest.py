@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(
     0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".claude", "skills", "_shared")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "skills", "_shared")),
 )
 import env_config  # noqa: E402  - after the sys.path insert above
 

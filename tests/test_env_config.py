@@ -10,6 +10,8 @@ agent's 151 incidents (VALIDATION.md F1), so it is pinned first and hardest.
 import os
 import sys
 
+import pytest
+
 sys.path.insert(
     0,
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".claude", "skills", "_shared")),
@@ -235,3 +237,40 @@ def test_a_hash_inside_a_quoted_value_survives(monkeypatch, tmp_path):
     _fresh(monkeypatch, path)
     e.load(announce=False)
     assert os.environ["CHATSEE_AGENT"] == "Agent #2"
+
+
+# ── Project root discovery ───────────────────────────────────────────────────
+# These skills ship to Claude Code, Codex, Cursor and Gemini CLI. Only the first
+# creates a `.claude/` directory, so a `.claude`-only search silently returns None
+# under the other three and the `.env` fallback stops loading entirely.
+
+
+def _skill_tree(root, marker: str):
+    """Build <root>/<marker>/ plus the skills/_shared/ path env_config would live at."""
+    (root / marker).mkdir(parents=True, exist_ok=True)
+    shared = root / "skills" / "_shared"
+    shared.mkdir(parents=True, exist_ok=True)
+    return shared / "env_config.py"
+
+
+@pytest.mark.parametrize("marker", [".claude", ".cursor", ".gemini", ".codex", ".chatsee"])
+def test_project_root_is_found_under_every_supported_host(monkeypatch, tmp_path, marker):
+    located = _skill_tree(tmp_path, marker)
+    monkeypatch.setattr(e, "__file__", str(located))
+    assert e._project_root() == str(tmp_path)
+
+
+def test_no_marker_anywhere_returns_none(monkeypatch, tmp_path):
+    bare = tmp_path / "skills" / "_shared"
+    bare.mkdir(parents=True)
+    monkeypatch.setattr(e, "__file__", str(bare / "env_config.py"))
+    # tmp_path has no marker; a real ancestor might, so only assert it isn't tmp_path.
+    assert e._project_root() != str(tmp_path)
+
+
+def test_the_nearest_root_wins_when_markers_nest(monkeypatch, tmp_path):
+    (tmp_path / ".claude").mkdir()
+    inner = tmp_path / "vendor" / "bundled"
+    located = _skill_tree(inner, ".cursor")
+    monkeypatch.setattr(e, "__file__", str(located))
+    assert e._project_root() == str(inner)
