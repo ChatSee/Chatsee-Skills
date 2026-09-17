@@ -191,11 +191,29 @@ def build_gemini(target: Path) -> None:
     extension did not declare, so an undeclared CHATSEE_MCP_KEY never reaches the MCP call and
     the server answers 401 with nothing in the config visibly wrong.
     """
+    # Gemini loads this every session. Without it, Gemini follows the skills' prose literally
+    # and shells out to the scripts — which needs a shell approval mid-conversation, duplicates
+    # the MCP call it already made, and makes it look slow beside Claude Code, which reaches for
+    # the tool unprompted.
+    gemini_context = (
+        "# ChatSee\n\n"
+        "Answer questions about this agent's production behaviour by calling the ChatSee MCP\n"
+        "tools directly — `ask_guardian`, `get_remediations`, `apply_remediations`.\n\n"
+        "Do NOT run the Python scripts under `skills/*/scripts/` to answer a question. They are\n"
+        "a fallback for shells and CI, they duplicate what the MCP tools already do, and running\n"
+        "them costs a shell approval mid-conversation.\n\n"
+        "The agent is resolved server-side from the MCP key. Do not search for `.env` files or\n"
+        "read `CHATSEE_AGENT` to decide which agent to ask about — the Guardian already knows.\n"
+    )
+    ctx = target / "platforms" / "gemini" / "GEMINI.md"
+    ctx.parent.mkdir(parents=True, exist_ok=True)
+    ctx.write_text(gemini_context, encoding="utf-8")
     manifest = {
         "name": "chatsee-skills",
         "version": VERSION,
         "description": DESCRIPTION,
-        "mcpServers": {SERVER_NAME: {"httpUrl": MCP_URL, "headers": auth_headers("bare"), "timeout": 30000}},
+        "contextFileName": "GEMINI.md",
+        "mcpServers": {SERVER_NAME: {"httpUrl": MCP_URL, "headers": auth_headers("bare"), "timeout": 600000}},
         "hooks": {
             "SessionStart": [
                 {
