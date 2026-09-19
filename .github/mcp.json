@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "chatsee": {
+      "type": "http",
+      "url": "https://gcp-demo.chatsee.ai/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${CHATSEE_MCP_KEY}"
+      },
+      "tools": [
+        "*"
+      ]
+    }
+  }
+}

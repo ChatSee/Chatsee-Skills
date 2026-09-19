@@ -5,12 +5,13 @@
 **Monitor your AI agent — and fix its failures — without leaving your coding agent.**
 
 Detect prompt-level and code-level failures in a deployed AI agent through ChatSee's **Guardian**,
-then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini CLI** and **Cursor** over a single MCP.
+then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini CLI**, **Cursor** and **GitHub Copilot** over a single MCP.
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-6C4BF6)](#-claude-code)
 [![Codex](https://img.shields.io/badge/Codex-plugin-10A37F)](#-codex)
 [![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-extension-4285F4)](#-gemini-cli)
 [![Cursor](https://img.shields.io/badge/Cursor-skills_+_MCP-333333)](#-cursor)
+[![GitHub Copilot](https://img.shields.io/badge/GitHub_Copilot-skills_+_MCP-24292F?logo=github&logoColor=white)](#-github-copilot)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](#prerequisites)
 [![MCP](https://img.shields.io/badge/protocol-MCP-000000)](#prerequisites)
 [![Site](https://img.shields.io/badge/chatsee.ai-000000)](https://chatsee.ai)
@@ -140,6 +141,33 @@ copy is tracked and would commit a live credential):
 
 Restart Cursor fully — it reads the global config at startup.
 
+### 🐙 GitHub Copilot
+
+Copilot has two surfaces with different setups.
+
+**Copilot code review / cloud agent** — the skills live in the repository, so they arrive when
+the repo does:
+
+```bash
+cp -R /path/to/ChatSee-Skills/.github/skills  <your-repo>/.github/skills
+```
+
+An administrator then adds the MCP server under **Settings → Copilot → MCP servers**, with the
+key under **Settings → Secrets and variables → Agents**. There is no one-click bundle for
+Copilot — this half is configured in GitHub, not from a file.
+
+**Copilot CLI** — personal skills go in `~/.copilot/skills/`, and a project `.mcp.json` or
+`.github/mcp.json` is honoured:
+
+```bash
+cp -R /path/to/ChatSee-Skills/skills/* ~/.copilot/skills/
+```
+
+> ⚠️ **Unverified.** `.github/mcp.json` is generated with an inferred remote-server schema.
+> GitHub documents the *local* shape (`"type": "local"` with `command`/`args`/`tools`) and does
+> not publish the remote one, and this has not been run against a real Copilot CLI install.
+> Confirm before relying on it.
+
 <details>
 <summary><b>Manual install (any editor, no plugin system)</b></summary>
 
@@ -167,6 +195,7 @@ Create `.env` at your repo root (see [`.env.example`](.env.example)), **add it t
 | `platforms/gemini/` | Gemini CLI | own directory + skills copy |
 | `.claude/skills/` | Claude Code (project) | generated mirror |
 | `.cursor/` | Cursor | generated mirror + config |
+| `.github/` | GitHub Copilot | generated mirror + config |
 
 ```bash
 python build.py            # regenerate every bundle

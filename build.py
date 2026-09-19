@@ -13,6 +13,7 @@ Who reads what
   Gemini CLI  (ext)     platforms/gemini/            -> its own skills/    MIRROR
   Claude Code (project) .claude/skills/                                    MIRROR
   Cursor      (project) .cursor/skills/                                    MIRROR
+  Copilot     (repo)    .github/skills/ + .github/mcp.json                 MIRROR
 
 Gemini gets its own directory rather than sharing the repo root. Sharing it meant Gemini
 discovered Claude Code's `hooks/hooks.json` and ran it with `${CLAUDE_PLUGIN_ROOT}` never
@@ -61,7 +62,7 @@ DESCRIPTION = (
 )
 
 # Hosts that will only read skills from a fixed path, so they get a copy of `skills/`.
-MIRRORS = (".claude/skills", ".cursor/skills", "platforms/gemini/skills")
+MIRRORS = (".claude/skills", ".cursor/skills", "platforms/gemini/skills", ".github/skills")
 
 STARTUP_SCRIPT = "skills/guardian-query/scripts/startup_check.py"
 
@@ -246,6 +247,37 @@ def build_gemini(target: Path) -> None:
     write_json("platforms/gemini/gemini-extension.json", manifest, target)
 
 
+def build_copilot(target: Path) -> None:
+    """GitHub Copilot: skills at `.github/skills/`, MCP at `.github/mcp.json`.
+
+    Copilot has two surfaces and they do not share paths. Copilot **code review** and the cloud
+    agent read `.github/skills/` from the repository, with the MCP server configured by an
+    administrator in repository settings rather than from a file. Copilot **CLI** reads personal
+    skills from `~/.copilot/skills/` and honours a project `.mcp.json` or `.github/mcp.json`.
+
+    ⚠️ UNVERIFIED: the remote-server schema below is inferred. GitHub documents the *local*
+    shape (`"type": "local"` with `command`/`args`/`tools`) and does not publish the remote one,
+    and Copilot CLI was not installed when this was written, so it has never been run. Treat it
+    as a starting point: install the CLI, confirm, and correct here. Three config bugs in this
+    repo came from schemas that were written but not exercised — do not assume this one is right.
+    """
+    sync_mirror(".github/skills", target)
+    write_json(
+        ".github/mcp.json",
+        {
+            "mcpServers": {
+                SERVER_NAME: {
+                    "type": "http",
+                    "url": MCP_URL,
+                    "headers": auth_headers("braced"),
+                    "tools": ["*"],
+                }
+            }
+        },
+        target,
+    )
+
+
 def cursor_server_config() -> dict:
     return {"url": MCP_URL, "headers": auth_headers("cursor")}
 
@@ -284,7 +316,7 @@ def cursor_deeplink() -> str:
     )
 
 
-BUILDERS = (build_claude, build_codex, build_gemini, build_cursor)
+BUILDERS = (build_claude, build_codex, build_gemini, build_cursor, build_copilot)
 
 
 def build(target: Path) -> None:
@@ -328,6 +360,7 @@ def check() -> int:
             "platforms/gemini/gemini-extension.json",
             ".cursor/mcp.json",
             ".cursor/hooks.json",
+            ".github/mcp.json",
         ):
             live = ROOT / rel
             if not live.exists() or live.read_bytes() != (fresh / rel).read_bytes():
@@ -354,7 +387,7 @@ def main() -> int:
     print(f"Built from {CANONICAL.relative_to(ROOT)}/  (MCP_URL={MCP_URL}, AUTH_MODE={AUTH_MODE})")
     for rel in MIRRORS:
         print(f"  mirror  {rel}/")
-    for rel in (".claude-plugin", ".codex-plugin", "platforms/gemini", ".cursor"):
+    for rel in (".claude-plugin", ".codex-plugin", "platforms/gemini", ".cursor", ".github"):
         print(f"  config  {rel}")
     print(f"\nAdd to Cursor:\n  {cursor_deeplink()}")
     return 0
