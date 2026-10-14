@@ -128,49 +128,28 @@ gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatse
 Then sign in from inside Gemini: `/mcp auth chatsee`. Confirm with `/mcp`; you want
 `chatsee … Connected`.
 
-### ⚫ Cursor
+### ⚫ Cursor and 🐙 GitHub Copilot (VS Code)
 
-Requires Cursor **2.4+** (agent skills). Cursor has no plugin bundle format, so the skills and
-the connection install separately:
-
-From a clone of this branch, copy the skills and the MCP config into your project (there is
-no key in it):
+These editors have no plugin installer, so the repository includes one. In a terminal (cmd,
+PowerShell or a macOS/Linux shell), go to **your own project folder** and run:
 
 ```bash
-# macOS / Linux
-mkdir -p <your-repo>/.cursor
-cp -R Chatsee-Skills/.cursor/skills Chatsee-Skills/.cursor/mcp.json <your-repo>/.cursor/
-```
-```powershell
-# Windows (PowerShell)
-New-Item -ItemType Directory -Force <your-repo>\.cursor | Out-Null
-Copy-Item -Recurse Chatsee-Skills\.cursor\skills, Chatsee-Skills\.cursor\mcp.json <your-repo>\.cursor\
+git clone -b chatsee-dev https://github.com/ChatSee/Chatsee-Skills.git
+python Chatsee-Skills/install.py copilot      # or: python Chatsee-Skills/install.py cursor
 ```
 
-Open `<your-repo>` in Cursor, then **Settings → MCP**: `chatsee` shows **Needs login**. Click
-it to sign in with ChatSee. (To use ChatSee in every project, put the same `mcp.json` content in
-`~/.cursor/mcp.json` instead.)
+It copies the four skills into the project and adds a `chatsee` server to the editor's MCP
+file (`.vscode/mcp.json` or `.cursor/mcp.json`), keeping any servers already there. If you
+cloned somewhere else, point it at the project instead: `python <clone>/install.py copilot
+--project <your project folder>`. Afterwards the `Chatsee-Skills` folder can be deleted, or
+left out of version control.
 
-### 🐙 GitHub Copilot
+**Copilot (VS Code):** open the project in VS Code, open `.vscode/mcp.json` and click
+**Start** above `"chatsee"`. VS Code asks to sign in; the browser opens ChatSee → **Continue**
+→ **Allow**. Then use Copilot Chat in **Agent** mode: *"list my ChatSee agents"*.
 
-**Copilot Chat in VS Code** (agent mode). From a clone of this branch, copy the skills and the
-VS Code MCP config into your project:
-
-```bash
-# macOS / Linux
-mkdir -p <your-repo>/.github <your-repo>/.vscode
-cp -R Chatsee-Skills/.github/skills <your-repo>/.github/
-cp Chatsee-Skills/.vscode/mcp.json <your-repo>/.vscode/
-```
-```powershell
-# Windows (PowerShell)
-New-Item -ItemType Directory -Force <your-repo>\.github, <your-repo>\.vscode | Out-Null
-Copy-Item -Recurse Chatsee-Skills\.github\skills <your-repo>\.github\
-Copy-Item Chatsee-Skills\.vscode\mcp.json <your-repo>\.vscode\
-```
-
-Open `<your-repo>` in VS Code, open `.vscode/mcp.json` and click **Start** above `chatsee`.
-VS Code asks to sign in; the browser opens ChatSee. Then use Copilot Chat in **Agent** mode.
+**Cursor:** open the project in Cursor, then **Settings → MCP**: `chatsee` shows **Needs
+login**. Click it to sign in with ChatSee, then ask in the Agent chat.
 
 Copilot's other surfaces:
 
