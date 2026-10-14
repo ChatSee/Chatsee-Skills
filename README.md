@@ -53,7 +53,13 @@ Before installing, make sure you have:
   ```bash
   pip install chatsee-ai
   ```
-- **This branch, cloned locally** (the install steps below point at the clone):
+- **Access to this GitHub repository.** It is private for now, so your GitHub account must be in
+  the ChatSee organization, and `git` must be signed in to GitHub. Check with:
+  ```bash
+  git ls-remote https://github.com/ChatSee/Chatsee-Skills chatsee-dev
+  ```
+  One line ending in `refs/heads/chatsee-dev` means you're ready. Claude Code, Codex and Gemini
+  fetch the branch themselves; only Cursor and Copilot need a clone:
   ```bash
   git clone -b chatsee-dev https://github.com/ChatSee/Chatsee-Skills.git
   ```
@@ -68,23 +74,27 @@ remove access any time by clearing the editor's authentication for `chatsee`.
 
 ### 🟣 Claude Code
 
-Run these **inside Claude Code** (start it with `claude`, then type the commands at the prompt),
-using the path of your clone:
+Run these **in your terminal**:
 
-```text
-/plugin marketplace add /path/to/Chatsee-Skills
-/plugin install chatsee-skills@chatsee
+```bash
+claude plugin marketplace add "ChatSee/Chatsee-Skills#chatsee-dev"
+claude plugin install chatsee-skills@chatsee
 ```
 
-Restart when prompted. Then sign in: `/mcp` → **chatsee** → **Authenticate**. `/mcp` should
-show `chatsee ✔ connected`, and *"list my ChatSee agents"* should list your agents.
+(`#chatsee-dev` selects this branch. Inside the Claude Code CLI the same commands work as
+`/plugin marketplace add …`; in the **VS Code** extension, use `/plugins` → **Marketplaces** →
+add `ChatSee/Chatsee-Skills#chatsee-dev`, then **Plugins** → install **chatsee-skills**.)
+
+Start `claude` (or reopen the VS Code panel), then sign in: `/mcp` → **chatsee** →
+**Authenticate**. `/mcp` should show `chatsee ✔ connected`, and *"list my ChatSee agents"*
+should list your agents.
 
 ### 🟢 Codex
 
 Run these **in your terminal** (Codex **v0.117+**):
 
 ```bash
-codex plugin marketplace add /path/to/Chatsee-Skills
+codex plugin marketplace add ChatSee/Chatsee-Skills@chatsee-dev
 codex plugin add chatsee-skills@chatsee
 codex plugin list        # should show chatsee-skills — installed, enabled
 codex mcp login chatsee  # opens the browser to sign in with ChatSee
@@ -92,14 +102,21 @@ codex mcp login chatsee  # opens the browser to sign in with ChatSee
 
 Open a Codex session; the skills and the `chatsee` MCP tools load automatically.
 
+> **Windows 10:** Codex uses Windows' own TLS, which has no TLS 1.3. The dev server must also
+> accept TLS 1.2, or Codex can't connect at all.
+
 ### 🔵 Gemini CLI
 
-Requires Gemini CLI **v0.26+** (hooks). From the repo root:
+Requires Gemini CLI **v0.26+**:
 
 ```bash
-gemini extensions link platforms/gemini --consent
+gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatsee-dev --consent
 gemini extensions list      # should show 1 MCP server and 4 agent skills
 ```
+
+Gemini first looks for a GitHub *release* named `chatsee-dev`, gets a 404, and asks to
+`git clone` instead: answer **Y**. (From a clone you can also run
+`gemini extensions install /path/to/Chatsee-Skills --consent`.)
 
 Then sign in from inside Gemini: `/mcp auth chatsee`. Confirm with `/mcp`; you want
 `chatsee … Connected`.
@@ -186,7 +203,9 @@ python build.py --check    # fail if any bundle is stale (CI)
 
 Gemini gets its own directory rather than sharing the repo root: sharing it meant Gemini
 discovered Claude Code's `hooks/hooks.json` and ran it with `${CLAUDE_PLUGIN_ROOT}` never
-expanded, so every session opened with a failed SessionStart hook.
+expanded, so every session opened with a failed SessionStart hook. The sign-in build (this
+branch) has no hooks, so it also writes `gemini-extension.json` and `GEMINI.md` at the root,
+which is what lets `gemini extensions install <repo> --ref chatsee-dev` work.
 
 ---
 

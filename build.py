@@ -261,6 +261,13 @@ def build_gemini(target: Path) -> None:
             },
         ]
     write_json("platforms/gemini/gemini-extension.json", manifest, target)
+    if AUTH_MODE == "oauth":
+        # `gemini extensions install <repo> --ref <branch>` reads the manifest at the repo root,
+        # so the sign-in build carries a copy there; its `skills/` is the canonical one. Safe
+        # only here: the key build has a Claude Code hooks/hooks.json at the root, which Gemini
+        # would pick up with ${CLAUDE_PLUGIN_ROOT} unexpanded (see the README).
+        write_json("gemini-extension.json", manifest, target)
+        (target / "GEMINI.md").write_text(gemini_context, encoding="utf-8")
 
 
 def build_copilot(target: Path) -> None:
@@ -377,6 +384,7 @@ def check() -> int:
             ".cursor/mcp.json",
             ".cursor/hooks.json",
             ".github/mcp.json",
+            *(("gemini-extension.json", "GEMINI.md") if AUTH_MODE == "oauth" else ()),
         ):
             live = ROOT / rel
             if not live.exists() or live.read_bytes() != (fresh / rel).read_bytes():
