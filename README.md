@@ -109,14 +109,21 @@ Open a Codex session; the skills and the `chatsee` MCP tools load automatically.
 
 Requires Gemini CLI **v0.26+**:
 
+While the repository is private, install from a clone. Gemini's own `git clone` doesn't use
+your saved GitHub login, so it can't fetch a private repo itself:
+
 ```bash
-gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatsee-dev --consent
+git clone -b chatsee-dev https://github.com/ChatSee/Chatsee-Skills.git
+gemini extensions install ./Chatsee-Skills --consent
 gemini extensions list      # should show 1 MCP server and 4 agent skills
 ```
 
-Gemini first looks for a GitHub *release* named `chatsee-dev`, gets a 404, and asks to
-`git clone` instead: answer **Y**. (From a clone you can also run
-`gemini extensions install /path/to/Chatsee-Skills --consent`.)
+Once the repository is public, this one command replaces the three above (answer **Y** when
+it offers to `git clone` after looking for a release):
+
+```bash
+gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatsee-dev --consent
+```
 
 Then sign in from inside Gemini: `/mcp auth chatsee`. Confirm with `/mcp`; you want
 `chatsee … Connected`.
