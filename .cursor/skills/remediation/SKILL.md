@@ -10,6 +10,19 @@ prompt** — transparent and developer-invoked: you see the diff before anything
 Wired to the real ChatSee Recommendations MCP server (`_shared/guardian_client.py`).
 Live only — there is no mock.
 
+## First: is ChatSee connected?
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+`apply_remediations`). If they are missing, or a call fails with an authentication error,
+**stop and tell the developer to sign in**, then retry:
+- Claude Code: `/mcp` → the ChatSee server → **Authenticate**
+- Gemini CLI: `/mcp auth chatsee`
+- Codex: `codex mcp login <server name>`, then restart Codex
+- Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**
+
+**Never search for API keys, `.env` files, environment variables or config files to get
+around a missing sign-in,** and never read files outside the project. The key-based scripts
+described below are only for CI setups where a key was deliberately provided.
+
 ## Where this sits in the loop
 ```
 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → ▶ 2 apply → 3 code fix
@@ -28,10 +41,13 @@ all-clear and must not be relayed as one. When it comes back empty:
    `POST /v1/error_recommendations/fetch_recommendations` then `…/submit_applied_recommendations`.)
 3. Re-run this skill once something is approved.
 
-## Agent scoping is automatic
-`get_remediations` resolves tenant + agent **server-side from `CHATSEE_MCP_KEY`** — the key
-is bound to one agent, so no agent name is passed. (Contrast skill 3/4's `ask_guardian`,
-which must be scoped by name.) To act on a different agent, use that agent's key.
+## Which agent
+**Signed in with ChatSee (the normal case):** pass `agent_name` to `get_remediations` and
+`apply_remediations`. You can reach only agents the signed-in person is assigned, the same
+as in the dashboard. If they have one agent, it is used automatically; if several, the tool
+returns their list — call `list_my_agents` or ask which one, never guess.
+
+**Using an API key instead:** the key is bound to one agent, so no name is passed.
 
 ## Where the prompt lives is YOUR problem to solve, not the script's
 
@@ -45,7 +61,7 @@ Shapes you will meet, and all of them are fine:
 |---|---|
 | A prose file (`.md`, `.txt`) | `apply_to_prompt.py` — shortcut below |
 | A Python string literal | `apply_to_prompt.py` — shortcut below |
-| A JS/TS template literal, a Go const, a Ruby heredoc | Edit it yourself, then `confirm_applied.py` |
+| A JS/TS template literal, a Go const, a Ruby heredoc | Edit it yourself, then the `apply_remediations` tool |
 | A YAML/JSON/TOML key | Edit that key with a real parser, keeping the file valid |
 | Assembled from fragments at runtime | Work out which fragment carries the system instructions; if genuinely ambiguous, ask |
 | A database row, a CMS | Write it back through whatever the app already uses |
@@ -67,29 +83,42 @@ tooling"* and the MCP call is only the acknowledgement. **You are the local tool
 3. **Verify the file still loads.** Re-parse the YAML, re-import the module, re-run the agent
    once. A prompt file that no longer parses takes the agent down.
 4. **Back up first** if you are not editing something under version control.
-5. **Then acknowledge** with `confirm_applied.py`, or the loop stays open and ChatSee still
-   believes the fix was never applied.
+5. **Then acknowledge** with the `apply_remediations` tool, or the loop stays open and
+   ChatSee still believes the fix was never applied.
 
 ### The shortcut
 
 `apply_to_prompt.py` handles the two shapes that need no judgement — a prose file, and a
 Python string literal (edited through the AST, re-parsed afterwards, write refused unless the
 file still compiles and the variable still holds exactly the intended text). It does the
-backup, the atomic write, the idempotent markers, the local record and the acknowledgement in
-one step. Use it when it fits; it is not the only door.
+backup, the atomic write, the idempotent markers and the local record. The acknowledgement
+stays with the `apply_remediations` tool. Use it when it fits; it is not the only door.
 
 For Python it finds the variable by name — `SYSTEM_PROMPT`, `SYSTEM_MESSAGE`,
 `SYSTEM_INSTRUCTIONS`, `INSTRUCTIONS`, `SYSTEM`, `PROMPT` — or `--var NAME`. A computed prompt
 (f-string, concatenation) it refuses, because rewriting one could silently change what the
 agent sends; that is a case for editing by hand.
 
-## Scripts
-- `scripts/fetch_remediation.py [all|new]` — show the approved rules. Default `all`.
-- `scripts/apply_to_prompt.py <target> [--mode all|new] [--var NAME] [--write] [--confirm]` —
-  the shortcut. **Dry-run by default**; `--write` applies, `--confirm` acknowledges.
-- `scripts/confirm_applied.py <id>… --note "what you changed" [--target <where>]` — acknowledge
-  a fix **you** applied. This is the general path and works regardless of where the prompt
-  lives. Both scripts write the same `.chatsee/applied.jsonl` record.
+## Tools, and the one script
+Talk to ChatSee **through the MCP tools** — they use the connection the developer signed in
+with, so nothing needs a key:
+
+- `get_remediations(mode, agent_name)` — the approved rules, as `skills_markdown` plus the
+  `failure_memory_ids` you confirm later. `mode` is `all` (default) or `pending`.
+- `apply_remediations(failure_memory_ids, details, agent_name)` — acknowledge rules that are
+  now in the prompt. **State-changing.**
+
+For the file edit itself, `scripts/apply_to_prompt.py` is still the shortcut for the two
+mechanical shapes. Give it the rules you fetched rather than letting it fetch them:
+
+- `scripts/apply_to_prompt.py <target> --rules-file <file> [--var NAME] [--write]` — save the
+  `get_remediations` output to a file (e.g. `.chatsee/rules.json`) and pass it here. The
+  script then only edits the file and never touches the network. **Dry-run by default**;
+  `--write` applies. Confirm afterwards with `apply_remediations`.
+
+**Only with an API key and no sign-in** do the older network-using scripts apply:
+`fetch_remediation.py`, `apply_to_prompt.py … --confirm` (no `--rules-file`), and
+`confirm_applied.py`. They read `CHATSEE_MCP_KEY`.
 
 ## A fix has ONE state. Read this before interpreting any output.
 
@@ -116,12 +145,17 @@ nothing has been applied. This skill therefore says **`new`** instead of `pendin
   is the one that needs a human in the dashboard.
 
 ## Steps
-1. `fetch_remediation.py` — show every approved rule (add `new` for only the undownloaded ones).
-2. `apply_to_prompt.py <agent-prompt-file>` — review the diff. Nothing is written.
-3. Re-run with `--write` to apply between `<!-- chatsee:failure-memory:start/end -->` markers
+1. Call `get_remediations` (with `agent_name` if needed) and show the developer every
+   approved rule. Use `mode: "pending"` only for rules never downloaded before.
+2. Save that tool output as JSON to `.chatsee/rules.json` beside the agent's code.
+3. Find the prompt. For a prose file or a Python literal, run
+   `apply_to_prompt.py <prompt-file> --rules-file .chatsee/rules.json` and show the diff —
+   nothing is written. For any other shape, edit by hand following the rules above.
+4. Re-run with `--write` to apply between `<!-- chatsee:failure-memory:start/end -->` markers
    (re-running replaces the block, never duplicates it). Each apply appends a record to
    `.chatsee/applied.jsonl`.
-4. Once the rules are truly in place, add `--confirm` to acknowledge.
+5. Once the rules are truly in place, call `apply_remediations` with the
+   `failure_memory_ids` and a note saying what changed.
    ⚠️ **State-changing:** moves each failure memory `Delivered → Applied` on the Guardian.
 
 ## Closed-loop alignment
@@ -131,8 +165,9 @@ Applying a fix moves a `failure_memory` through `Created → Delivered → Appli
 our marker block *is* the "inject the skill into the prompt" step it expects first.
 
 ## Notes & status
-- Key in `CHATSEE_MCP_KEY` (env), endpoint `CHATSEE_MCP_URL` (env, **no default** — a
-  wrong-environment default would silently query the wrong tenant).
+- Signed in with ChatSee, nothing is configured by hand. The API-key path alone reads
+  `CHATSEE_MCP_KEY` and `CHATSEE_MCP_URL` (env, **no default** — a wrong-environment default
+  would silently query the wrong tenant).
 - **Live-tested ✓, loop closed** — the full `Created → Delivered → Applied` transition has
   run on two agents in two separate tenants, confirmed by the applied id leaving the pending
   set on a re-fetch (not merely a 200 response). Transcript:

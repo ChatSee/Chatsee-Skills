@@ -7,6 +7,11 @@ Idempotent: re-running REPLACES the managed block, never duplicates it.
 SAFE BY DEFAULT: prints a diff and writes nothing unless you pass --write.
 
     usage:  apply_to_prompt.py <prompt_file> [--mode all|new] [--write] [--confirm]
+            apply_to_prompt.py <prompt_file> --rules-file <saved get_remediations output> [--write]
+
+    --rules-file  signed in with ChatSee, no key: take the rules from the get_remediations
+               tool's output instead of fetching them. The script then never touches the
+               network; confirm afterwards with the apply_remediations tool.
 
     --mode     which rules to apply (default: all — everything this agent's prompt should
                contain). `new` applies only never-downloaded rules, which is rarely what you
@@ -237,11 +242,15 @@ def _splice(text: str, block: str) -> str:
 
 
 def _parse(argv):
-    """Return (path, mode, write, confirm, var). Unknown flags are an error, never ignored."""
-    path, mode, write, confirm, var = None, "all", False, False, None
+    """Return (path, mode, write, confirm, var, rules_file). Unknown flags are an error."""
+    path, mode, write, confirm, var, rules_file = None, "all", False, False, None, None
     it = iter(argv)
     for a in it:
-        if a == "--mode":
+        if a == "--rules-file":
+            rules_file = next(it, None)
+            if not rules_file:
+                raise ApplyError("--rules-file needs a path to the get_remediations output")
+        elif a == "--mode":
             raw = next(it, None)
             # "new" is our word for the server's "pending" — see the docstring.
             mode = {"all": "all", "new": "pending", "pending": "pending"}.get(raw)
@@ -261,7 +270,28 @@ def _parse(argv):
             path = a
         else:
             raise ApplyError(f"unexpected extra argument {a!r} (one prompt file at a time).")
-    return path, mode, write, confirm, var
+    return path, mode, write, confirm, var, rules_file
+
+
+def _load_rules_file(rules_file: str) -> dict:
+    """Read rules saved from the get_remediations MCP tool.
+
+    This is how the script works when the developer signed in with ChatSee rather than
+    setting a key. The sign-in lives inside the editor and never reaches a script, so the
+    editor fetches the rules over its own connection, saves the tool's JSON output, and
+    hands the file here. The script then only does the local, deterministic part — the
+    splice — and never touches the network.
+    """
+    try:
+        with open(rules_file, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as exc:
+        raise ApplyError(f"could not read rules from {rules_file}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ApplyError(f"{rules_file} is not the JSON object get_remediations returns")
+    if data.get("error"):
+        raise ApplyError(f"get_remediations returned an error: {data['error']}")
+    return data
 
 
 def _record(path: str, ids: list, mode: str, digest: str, confirmed: bool) -> None:
@@ -290,18 +320,25 @@ def _write_atomic(path: str, content: str) -> None:
 
 
 def main() -> None:
-    path, mode, write, confirm, var = _parse(sys.argv[1:])
+    path, mode, write, confirm, var, rules_file = _parse(sys.argv[1:])
     if not path:
         sys.exit(__doc__)
     if confirm and not write:
         raise ApplyError(
             "--confirm requires --write (never acknowledge a fix that wasn't applied)."
         )
+    if confirm and rules_file:
+        # With --rules-file the script has no connection of its own to confirm over.
+        # The editor confirms instead, through the apply_remediations tool.
+        raise ApplyError(
+            "--confirm can't be used with --rules-file. After --write, confirm through the "
+            "apply_remediations tool with the failure_memory_ids printed below."
+        )
     # Before any network call: refusing early means a bad target costs nothing and cannot
     # leave a fix half-delivered.
     _check_target(path)
 
-    r = g.get_remediations(mode)
+    r = _load_rules_file(rules_file) if rules_file else g.get_remediations(mode)
     md, ids = r.get("skills_markdown", ""), r.get("failure_memory_ids", [])
     if not md.strip():
         print(f"No {mode} remediations — nothing to apply. File untouched.")
@@ -375,6 +412,8 @@ def main() -> None:
         )
         _record(path, ids, mode, digest, confirmed=True)
         print(f"Confirmed with Guardian: {json.dumps(resp)[:300]}")
+    elif rules_file:
+        print("(not confirmed — call the apply_remediations tool with the ids above to close the loop)")
     else:
         print("(not confirmed — re-run with --confirm to mark these applied on the Guardian)")
 

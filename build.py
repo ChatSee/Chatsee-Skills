@@ -47,8 +47,8 @@ ROOT = Path(__file__).resolve().parent
 CANONICAL = ROOT / "skills"
 
 # ── The two things that change before we publish ────────────────────────────
-MCP_URL = "https://gcp-demo.chatsee.ai/mcp/"
-AUTH_MODE = "bearer-env"  # "bearer-env" today; "oauth" once the MCP server speaks OAuth 2.1
+MCP_URL = "https://dev-react.chatsee.ai/mcp/"  # dev, sign-in; main stays on gcp-demo + keys until release (CSA-4027)
+AUTH_MODE = "oauth"  # sign in with ChatSee; no key in any generated config
 
 VERSION = "1.0.0"
 KEY_VAR = "CHATSEE_MCP_KEY"
@@ -141,9 +141,19 @@ def build_claude(target: Path) -> None:
                     {"hooks": [{"type": "command", "command": f'python -u "${{CLAUDE_PLUGIN_ROOT}}/{STARTUP_SCRIPT}"'}]}
                 ]
             },
-        },
+        }
+        if AUTH_MODE != "oauth"
+        else OAUTH_NO_HOOK,
         target,
     )
+
+
+# The startup hook reads CHATSEE_MCP_KEY and has nothing to do after an OAuth sign-in (a
+# hook cannot use the editor's MCP connection), so OAuth builds ship it switched off.
+OAUTH_NO_HOOK = {
+    "description": "No session-start hook: it needs an API key, and this build signs in with ChatSee.",
+    "hooks": {},
+}
 
 
 def build_codex(target: Path) -> None:
@@ -203,8 +213,14 @@ def build_gemini(target: Path) -> None:
         "Do NOT run the Python scripts under `skills/*/scripts/` to answer a question. They are\n"
         "a fallback for shells and CI, they duplicate what the MCP tools already do, and running\n"
         "them costs a shell approval mid-conversation.\n\n"
-        "The agent is resolved server-side from the MCP key. Do not search for `.env` files or\n"
-        "read `CHATSEE_AGENT` to decide which agent to ask about — the Guardian already knows.\n"
+        + (
+            "The developer signs in with ChatSee; the tools see only the agents that person may\n"
+            "reach. Pass `agent_name` to name one. If unsure which, call `list_my_agents` and ask\n"
+            "— never guess. Do not search for `.env` files or read `CHATSEE_AGENT` to decide.\n"
+            if AUTH_MODE == "oauth"
+            else "The agent is resolved server-side from the MCP key. Do not search for `.env` files or\n"
+            "read `CHATSEE_AGENT` to decide which agent to ask about — the Guardian already knows.\n"
+        )
     )
     ctx = target / "platforms" / "gemini" / "GEMINI.md"
     ctx.parent.mkdir(parents=True, exist_ok=True)
@@ -215,7 +231,7 @@ def build_gemini(target: Path) -> None:
         "description": DESCRIPTION,
         "contextFileName": "GEMINI.md",
         "mcpServers": {SERVER_NAME: {"httpUrl": MCP_URL, "headers": auth_headers("bare"), "timeout": 600000}},
-        "hooks": {
+        "hooks": {} if AUTH_MODE == "oauth" else {
             "SessionStart": [
                 {
                     "matcher": "startup",
@@ -296,7 +312,7 @@ def build_cursor(target: Path) -> None:
         ".cursor/hooks.json",
         {
             "version": 1,
-            "hooks": {
+            "hooks": {} if AUTH_MODE == "oauth" else {
                 # The startup check makes live Guardian calls, so it gets a ceiling rather than
                 # being allowed to hold the session open. Not failClosed: a Guardian that is slow
                 # or down must not stop the developer from working.

@@ -20,6 +20,10 @@ then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini
 
 ---
 
+> **Branch `chatsee-dev`: the ChatSee dev environment.** The MCP is `https://dev-react.chatsee.ai/mcp/`
+> and you **sign in with your ChatSee account**; there is no API key to set. `main` still targets
+> gcp-demo with an MCP key until the sign-in release.
+
 ## What you get
 
 Four skills, one MCP, one loop — **observe → ask what's wrong → fix the prompt → fix the code → repeat.**
@@ -33,7 +37,8 @@ Four skills, one MCP, one loop — **observe → ask what's wrong → fix the pr
 
 Every step is **transparent and developer-invoked** — you ask, see the evidence, and approve the change. Nothing is applied silently.
 
-> 💡 **On session start**, the plugin surfaces what your agent broke recently — no need to think to ask. See [Startup check](#-startup-check).
+> 💡 Ask *"what's my agent breaking?"* at the start of a session to see recent failures. (The
+> automatic startup check needs an API key, so it is off on this branch. See [Startup check](#-startup-check).)
 
 ---
 
@@ -41,27 +46,21 @@ Every step is **transparent and developer-invoked** — you ask, see the evidenc
 
 Before installing, make sure you have:
 
-- **Python 3.9+** — the skills carry their own client; skills 2/3/4 need **no third-party packages**.
-- **A ChatSee MCP key** — `cs-live-…`, bound to one agent. Ask the ChatSee team.
-- **The `chatsee-ai` SDK** — only needed for `telemetry-setup` (skill 1):
+- **A ChatSee account on dev**: you can log in at <https://dev-react.chatsee.ai>. The editor
+  sees only the agents that account can see.
+- **Python 3.9+**: the skills carry their own scripts; skills 2/3/4 need **no third-party packages**.
+- **The `chatsee-ai` SDK**: only needed for `telemetry-setup` (skill 1):
   ```bash
   pip install chatsee-ai
   ```
+- **This branch, cloned locally** (the install steps below point at the clone):
+  ```bash
+  git clone -b chatsee-dev https://github.com/ChatSee/Chatsee-Skills.git
+  ```
 
-Set the key as an environment variable so the plugin's MCP can read it (never commit it):
-
-```bash
-# macOS / Linux
-export CHATSEE_MCP_KEY="cs-live-<tenant>-<secret>"
-export CHATSEE_AGENT="Your Agent Name"          # quote it — names have spaces
-```
-```powershell
-# Windows (PowerShell) — persists across sessions
-setx CHATSEE_MCP_KEY "cs-live-<tenant>-<secret>"
-setx CHATSEE_AGENT   "Your Agent Name"
-```
-
-See the full variable list in [Configuration](#configuration).
+**Signing in:** the first time the editor uses the `chatsee` MCP, it opens your browser at
+ChatSee. Log in, click **Continue**, then **Allow**, and the editor is connected. You can
+remove access any time by clearing the editor's authentication for `chatsee`.
 
 ---
 
@@ -69,28 +68,29 @@ See the full variable list in [Configuration](#configuration).
 
 ### 🟣 Claude Code
 
-Run these **inside Claude Code** (start it with `claude`, then type the commands at the prompt):
+Run these **inside Claude Code** (start it with `claude`, then type the commands at the prompt),
+using the path of your clone:
 
 ```text
-/plugin marketplace add ChatSee/Chatsee-Skills
+/plugin marketplace add /path/to/Chatsee-Skills
 /plugin install chatsee-skills@chatsee
 ```
 
-Restart when prompted. Confirm with `/plugin` → the skills and the `chatsee` MCP server should show as active.
-
-<sub>Private repo? Claude Code uses your existing `git` authentication, so no extra step is needed.</sub>
+Restart when prompted. Then sign in: `/mcp` → **chatsee** → **Authenticate**. `/mcp` should
+show `chatsee ✔ connected`, and *"list my ChatSee agents"* should list your agents.
 
 ### 🟢 Codex
 
 Run these **in your terminal** (Codex **v0.117+**):
 
 ```bash
-codex plugin marketplace add ChatSee/Chatsee-Skills
+codex plugin marketplace add /path/to/Chatsee-Skills
 codex plugin add chatsee-skills@chatsee
 codex plugin list        # should show chatsee-skills — installed, enabled
+codex mcp login chatsee  # opens the browser to sign in with ChatSee
 ```
 
-Open a Codex session — the skills and the `chatsee` MCP tools (`ask_guardian`, `get_remediations`, `apply_remediations`) load automatically.
+Open a Codex session; the skills and the `chatsee` MCP tools load automatically.
 
 ### 🔵 Gemini CLI
 
@@ -101,20 +101,8 @@ gemini extensions link platforms/gemini --consent
 gemini extensions list      # should show 1 MCP server and 4 agent skills
 ```
 
-Gemini prompts for your key and agent name at install — it is the only host that collects
-the credential for you rather than assuming you exported it.
-
-> **Known Gemini CLI bug:** the prompt can report `Setting "…" updated` while saving nothing,
-> after which `extensions list` shows `[not set]` and the MCP tools never appear. If that
-> happens, write the values directly to
-> `~/.gemini/extensions/chatsee-skills/.env`:
->
-> ```
-> CHATSEE_MCP_KEY=cs-live-…
-> CHATSEE_AGENT=Your Agent Name
-> ```
->
-> Then confirm with `gemini mcp list` — you want `chatsee … Connected`.
+Then sign in from inside Gemini: `/mcp auth chatsee`. Confirm with `/mcp`; you want
+`chatsee … Connected`.
 
 ### ⚫ Cursor
 
@@ -125,21 +113,15 @@ the connection install separately:
 cp -R /path/to/ChatSee-Skills/.cursor/skills  <your-repo>/.cursor/skills
 ```
 
-For the MCP server, put your key in **`~/.cursor/mcp.json`** (global, not the repo — the repo
-copy is tracked and would commit a live credential):
+For the MCP server, add this to **`~/.cursor/mcp.json`** (or copy the repo's `.cursor/mcp.json`).
+There is no key in it:
 
 ```json
-{ "mcpServers": { "chatsee": {
-    "url": "https://gcp-demo.chatsee.ai/mcp/",
-    "headers": { "Authorization": "Bearer cs-live-…" } } } }
+{ "mcpServers": { "chatsee": { "url": "https://dev-react.chatsee.ai/mcp/" } } }
 ```
 
-> **Why the key is written in full here:** Cursor does not expand `${env:VAR}` inside headers
-> for *remote* MCP servers — it sends the literal string and the server answers 401. The
-> generated `.cursor/mcp.json` uses the documented form so it starts working when Cursor fixes
-> this; until then, use the global file above, or an `mcp-remote` stdio shim.
-
-Restart Cursor fully — it reads the global config at startup.
+Restart Cursor fully, then open **Settings → MCP**: `chatsee` shows **Needs login**. Click it
+to sign in with ChatSee.
 
 ### 🐙 GitHub Copilot
 
@@ -152,9 +134,9 @@ the repo does:
 cp -R /path/to/ChatSee-Skills/.github/skills  <your-repo>/.github/skills
 ```
 
-An administrator then adds the MCP server under **Settings → Copilot → MCP servers**, with the
-key under **Settings → Secrets and variables → Agents**. There is no one-click bundle for
-Copilot — this half is configured in GitHub, not from a file.
+An administrator then adds the MCP server (`https://dev-react.chatsee.ai/mcp/`) under
+**Settings → Copilot → MCP servers**. There is no one-click bundle for Copilot; this half is
+configured in GitHub, not from a file.
 
 **Copilot CLI** — personal skills go in `~/.copilot/skills/`, and a project `.mcp.json` or
 `.github/mcp.json` is honoured:
@@ -210,6 +192,10 @@ expanded, so every session opened with a failed SessionStart hook.
 
 ## 🚀 Startup check
 
+> **Off on the `chatsee-dev` branch.** The startup script calls the Guardian with an MCP key,
+> and this branch signs in instead, so no session-start hook is installed. Ask in the session
+> instead (*"what's my agent breaking?"*). The script below still works if you set a key yourself.
+
 On every session start, the plugin runs a **predefined startup query set** against the Guardian and surfaces your agent's recent status — so you learn it's been failing without having to ask.
 
 - **Default set (6 queries):** `failures` · `topcode` · `clusters` · `recent` · `severity` · `escalations` — covers almost every code-based question, and each answer is then **instant** to reuse during the session.
@@ -249,13 +235,13 @@ Guardian calls take **~10–60s** (`ask_guardian` is agentic). Narrow questions 
 
 ## Configuration
 
-Env only — **never hardcode keys.**
+On this branch the MCP connection needs **no configuration**: the URL is in the plugin, and
+you sign in through the browser. The variables below are optional.
 
 | Variable | Used by | Purpose |
 |----------|---------|---------|
-| `CHATSEE_MCP_KEY` | skills 2/3/4 | Guardian MCP key (`cs-live-…`), bound to one agent |
-| `CHATSEE_MCP_URL` | skills 2/3/4 | MCP endpoint (e.g. `https://gcp-demo.chatsee.ai/mcp/`) |
 | `CHATSEE_AGENT` | skills 3/4 | agent name to scope queries to (**quote it** — names have spaces) |
+| `CHATSEE_MCP_KEY` / `CHATSEE_MCP_URL` | standalone scripts only | only for running the skills' Python scripts outside an editor; not used by the plugin |
 | `CHATSEE_MCP_TIMEOUT` | skills 2/3/4 | per-call seconds (default 300) |
 | `CHATSEE_AGENT_ID` / `CHATSEE_TENANT_ID` / `CHATSEE_ENV` | skill 1 | the agent's IDs + environment (`dev`\|`qa`\|`demo`\|`poc`) |
 

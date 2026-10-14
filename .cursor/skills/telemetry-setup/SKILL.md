@@ -11,6 +11,19 @@ skills 2–4 can act on it.
 
 **Subject = the agent's real end-user conversations**, never the Claude Code session.
 
+## First: is ChatSee connected?
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+`apply_remediations`). If they are missing, or a call fails with an authentication error,
+**stop and tell the developer to sign in**, then retry:
+- Claude Code: `/mcp` → the ChatSee server → **Authenticate**
+- Gemini CLI: `/mcp auth chatsee`
+- Codex: `codex mcp login <server name>`, then restart Codex
+- Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**
+
+**Never search for API keys, `.env` files, environment variables or config files to get
+around a missing sign-in,** and never read files outside the project. The key-based scripts
+described below are only for CI setups where a key was deliberately provided.
+
 ## Where this sits in the loop
 ```
 ▶ 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → 2 apply → 3 code fix
@@ -48,15 +61,33 @@ if ChatSee is unreachable the agent keeps serving users.
 2. **Install the SDK** into the interpreter *the agent* runs on:
    `python -m pip install chatsee-ai`. (Skills 2/3/4 need nothing — standard library only.)
 
-3. **Read the agent's config, don't invent it.** `agent_id`, `tenant_id` and the environment
-   come from the agent's own configuration. **Never write a default environment** — a plausible
-   guess silently ships production traffic to the wrong ChatSee, and is invisible in whichever
-   environment the default happens to match.
+3. **Get the ids from ChatSee, don't invent them.** If the agent's config already has
+   `agent_id`, `tenant_id` and an environment, use those.
 
-   ⚠️ **Check `.env` is gitignored before you finish.** Onboarding drops a `.env` at the project
-   root containing a **live MCP key**, and a repo that has never needed one has no rule for it.
-   Add `.env` to `.gitignore` if it is missing — this is the single easiest way for a customer
-   to leak a credential on their first commit. If the agent has no way to read `.env` yet,
+   **If the developer pastes the portal's "Connect Source" snippet**, take only `agent_id`,
+   `tenant_id` and the environment (or `api_base_url`) from it. Do not copy the snippet itself:
+   its `api_key`, `tenant_name` and `user_id` arguments crash the SDK (see *Getting the ids*).
+   Then call `list_my_agents` and check that the pasted `agent_id` is listed and the
+   `tenant_id` matches. If either is off, say so before writing anything — a typo here sends
+   telemetry nowhere, with no error. Just added in the portal and not listed? The person
+   may not be assigned to it yet; ask them to check, rather than proceeding on a guess.
+
+   Otherwise call the
+   **`list_my_agents`** tool: it returns `tenant_id`, the SDK `environment` this ChatSee
+   serves, and the agents the signed-in person can reach, each with its `agent_id`. If it
+   lists several agents, ask which one this code is — never pick. If the agent isn't listed,
+   it hasn't been added to ChatSee yet (see *Getting the ids*). **Never write a default
+   environment** — a plausible guess silently ships production traffic to the wrong ChatSee,
+   and is invisible in whichever environment the default happens to match. If
+   `list_my_agents` returns no `environment`, ask.
+
+   Write the three values to the project's `.env` as `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`
+   and `CHATSEE_ENV`. None of them is a secret, and no key is needed for any of this.
+
+   ⚠️ **Check `.env` is gitignored before you finish.** It usually holds the model API key,
+   and on the API-key path a **live MCP key** too. A repo that has never needed one has no
+   rule for it. Add `.env` to `.gitignore` if it is missing — this is the single easiest way
+   for a customer to leak a credential on their first commit. If the agent has no way to read `.env` yet,
    `python-dotenv` is the normal choice; don't make the developer export variables by hand.
 
    **Two config files, and the split matters.** Anything identifying *this* agent goes in the
@@ -116,8 +147,15 @@ if ChatSee is unreachable the agent keeps serving users.
 
 ⚠️ **`verify_ssl` defaults to `False`** and the SDK suppresses the warning, so TLS
 certificates go unchecked on real prompt traffic. Always pass `verify_ssl=True` explicitly.
-Pass `redaction_enabled=True` to have the SDK strip PII first. (Confirmed by execution on
-both `0.10.0` and the current published `0.12.1` — this is not a version that got fixed.)
+(Confirmed by execution on both `0.10.0` and the current published `0.12.1` — this is not
+a version that got fixed.)
+
+**PII redaction: leave it off on `dev`.** `redaction_enabled=True` makes the SDK download
+its redaction rules from `/v1/redaction/fetch-classifiers` before every send. The dev APIs
+don't serve that endpoint yet (404), so the agent prints a "Failed to fetch redaction
+classifiers" warning on every turn and sends unredacted anyway. Pass
+`redaction_enabled=False` on `dev`, mention to the developer that redaction exists, and
+turn it on only for an environment that serves the endpoint.
 
 **Always send `metadata`.** A free-form dict the SDK forwards verbatim, and it costs nothing.
 At minimum `model` and `code_version` (a git sha): without them "did this start when we
@@ -144,6 +182,9 @@ deliberately no stubbed variant: a canned agent proves only that a POST succeeds
 `session_id` from a real turn is the thing worth having.
 
 ## Getting the ids
+
+Signed in with ChatSee, `list_my_agents` gives them (step 3). For an agent that doesn't
+exist in ChatSee yet, someone adds it first:
 
 ChatSee portal → **Settings → Add agent** → name it, type **interaction** + **custom** → Add.
 The ids are minted there. (`POST /v1/agents/register_agent` does the same over REST, for a

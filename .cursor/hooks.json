@@ -1,11 +1,4 @@
 {
   "version": 1,
-  "hooks": {
-    "sessionStart": [
-      {
-        "command": "python skills/guardian-query/scripts/startup_check.py --stdout",
-        "timeout": 30
-      }
-    ]
-  }
+  "hooks": {}
 }

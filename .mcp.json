@@ -2,10 +2,8 @@
   "mcpServers": {
     "chatsee": {
       "type": "http",
-      "url": "https://gcp-demo.chatsee.ai/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${CHATSEE_MCP_KEY}"
-      }
+      "url": "https://dev-react.chatsee.ai/mcp/",
+      "headers": {}
     }
   }
 }

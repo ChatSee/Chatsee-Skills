@@ -9,6 +9,19 @@ Skill 2 applies *prompt-level* fixes; skill 4 *surfaces* insights to a human; sk
 **Claude** read the Guardian's data for **one agent** and fix **structural** problems a
 prompt can't — context-window/memory handling, tool-wiring, control-flow bugs.
 
+## First: is ChatSee connected?
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+`apply_remediations`). If they are missing, or a call fails with an authentication error,
+**stop and tell the developer to sign in**, then retry:
+- Claude Code: `/mcp` → the ChatSee server → **Authenticate**
+- Gemini CLI: `/mcp auth chatsee`
+- Codex: `codex mcp login <server name>`, then restart Codex
+- Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**
+
+**Never search for API keys, `.env` files, environment variables or config files to get
+around a missing sign-in,** and never read files outside the project. The key-based scripts
+described below are only for CI setups where a key was deliberately provided.
+
 ## Where this sits in the loop
 ```
 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → 2 apply → ▶ 3 code fix
@@ -23,16 +36,24 @@ and there is **no regression tracking for code changes**. State that plainly whe
 fix over — do not imply the loop is closed for structural work.
 
 ## Always scope to one named agent (this is load-bearing)
-`ask_guardian` is tenant-scoped and sees every agent on the tenant (32+ in dev). With no
-agent named it **silently answers about a different agent** — the bug this skill had.
-`scripts/pull_insights.py` therefore **requires** an agent and routes the question through
-`guardian_client.scope()`. Never ask the Guardian an agent-specific question without naming
-the agent.
+The Guardian sees every agent on the tenant. Asked without an agent, it can **silently answer
+about a different one** — a bug this skill once had. So every question names the agent:
+
+- **Signed in with ChatSee (the normal case):** call the `ask_guardian` tool with
+  `agent_name`. The server checks that the person may see that agent and scopes the
+  question to it. Don't know the name? Call `list_my_agents`; if it lists several, ask
+  which one — never pick for them.
+- **Using an API key instead:** the key is bound to one agent, so the scope is fixed.
+  `scripts/pull_insights.py --agent "<name>"` is the key-only fallback; it reads
+  `CHATSEE_MCP_KEY`.
 
 ## Steps
-1. **Pull** structural insights for the agent:
-   `pull_insights.py --agent "<name>"` (or set `CHATSEE_AGENT`). Add a custom question as a
-   trailing arg to drill in.
+1. **Pull** structural insights for the agent with `ask_guardian(question, agent_name)`.
+   Ask for structural signatures specifically, e.g. *"Which failures in the last 7 days
+   point at code rather than the prompt — truncated replies, failures that grow with
+   conversation length, wrong or repeated tool calls, loops that don't end? Give error
+   codes, counts and example sessions."* Follow up with narrower questions to drill in.
+   The Guardian can take a minute or two when the window has little data.
 2. **Triage strictly** — most failures are NOT structural. **Route on the failure's
    signature, never on its error-code prefix**: the code space is undocumented, and the same
    prefix appears on both kinds (the live demo agent's `SCO_07`/`REA_26` are structural,
@@ -45,10 +66,13 @@ the agent.
 4. **Propose a fix** as a concrete edit, citing the Guardian evidence.
 5. **Apply only with developer approval** (propose-only by default).
 
-## Script
-`scripts/pull_insights.py` fetches one agent's structural insights from the live Guardian. That
-is all it does — the diagnosis, locating the cause in the code, and writing the fix are Claude's
-job, working from the developer's actual repository.
+## Tools, and the fallback script
+`ask_guardian` fetches the Guardian's view of one agent. That is all it does — the diagnosis,
+locating the cause in the code, and writing the fix are Claude's job, working from the
+developer's actual repository. It uses the connection the developer signed in with, so no
+key is needed.
+
+`scripts/pull_insights.py` does the same fetch for the API-key path only.
 
 ## Status
 **Live-tested ✓** — a scoped call returns *only* that agent's structural failures, and an

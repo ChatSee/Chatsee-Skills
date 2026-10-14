@@ -11,6 +11,19 @@ happening in production. Read-only.
 **Skill 3 vs. skill 4 (same data, different driver):** skill 4 = the *developer* asks and
 reads; skill 3 = *Claude* consumes the same data and proposes fixes.
 
+## First: is ChatSee connected?
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+`apply_remediations`). If they are missing, or a call fails with an authentication error,
+**stop and tell the developer to sign in**, then retry:
+- Claude Code: `/mcp` → the ChatSee server → **Authenticate**
+- Gemini CLI: `/mcp auth chatsee`
+- Codex: `codex mcp login <server name>`, then restart Codex
+- Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**
+
+**Never search for API keys, `.env` files, environment variables or config files to get
+around a missing sign-in,** and never read files outside the project. The key-based scripts
+described below are only for CI setups where a key was deliberately provided.
+
 ## Where this sits in the loop
 ```
 1 telemetry → [ChatSee classifies] → ▶ 4 ask → [a human approves] → 2 apply → 3 code fix
@@ -28,20 +41,28 @@ skill 2 rewrites a production system prompt. So when the developer wants somethi
 
 Say which of the two you are recommending and why, rather than jumping straight to a fix.
 
-## Scope agent-specific questions
-`ask_guardian` is tenant-scoped (32+ agents). For an agent-specific question, name the
-agent so the answer is about it only:
-- `query_guardian.py --agent "<name>" "top error codes in the last 24 hours"`
-- tenant-wide questions need no agent: `query_guardian.py "what agents can you see?"`
+## How to ask — call the MCP tool, don't run a script
+Use the ChatSee MCP tools directly. They travel on the connection the developer signed
+in with, so nothing needs a key:
 
-`--agent` (or `CHATSEE_AGENT`) routes through `guardian_client.scope()`. Without it the
-script prints a "tenant-wide" note so the scope is never ambiguous.
+- `list_my_agents` — which agents this person can see. Call it first when you're unsure
+  which agent they mean.
+- `ask_guardian(question, agent_name)` — the question, scoped to one agent by name.
+
+Scoping follows the signed-in person's ChatSee permissions, exactly as the dashboard
+does. A non-admin with several agents must name one; if they don't, the tool returns
+their agent list — pick the one they meant and ask again rather than guessing. Admins
+may omit `agent_name` to ask about the whole organization.
 
 ## Steps
-1. Run `query_guardian.py [--agent "<name>"] "<question>"`.
-2. Present the answer concisely. Pass `SESSION_ID=<id from the answer>` to ask a follow-up
-   in the same Guardian conversation.
-3. To fix something: hand off to skill 2 (prompt-level) or skill 3 (structural).
+1. If the agent isn't obvious, call `list_my_agents`.
+2. Call `ask_guardian` with the question and `agent_name`.
+3. Present the answer concisely. Pass the returned `session_id` back to `ask_guardian`
+   to ask a follow-up in the same Guardian conversation.
+4. To fix something: hand off to skill 2 (prompt-level) or skill 3 (structural).
+
+**Only if the tools aren't available** (an API-key setup with no sign-in), fall back to
+`query_guardian.py [--agent "<name>"] "<question>"`, which reads `CHATSEE_MCP_KEY`.
 
 ## The startup check — the one thing here that isn't pull
 

@@ -1,15 +1,4 @@
 {
-  "description": "SessionStart hook: asks the Guardian for the agent's recent failures and surfaces them. Needs CHATSEE_MCP_KEY and CHATSEE_AGENT in the environment; python must be on PATH.",
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python -u \"${CLAUDE_PLUGIN_ROOT}/skills/guardian-query/scripts/startup_check.py\""
-          }
-        ]
-      }
-    ]
-  }
+  "description": "No session-start hook: it needs an API key, and this build signs in with ChatSee.",
+  "hooks": {}
 }
