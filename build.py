@@ -299,6 +299,15 @@ def build_copilot(target: Path) -> None:
         },
         target,
     )
+    # Copilot Chat in VS Code reads neither file above: it takes `.vscode/mcp.json`, keyed
+    # `servers`, and prompts for secrets through `inputs` rather than environment variables.
+    vscode: dict = {"servers": {SERVER_NAME: {"type": "http", "url": MCP_URL}}}
+    if AUTH_MODE != "oauth":
+        vscode["inputs"] = [
+            {"type": "promptString", "id": "chatsee-mcp-key", "description": "ChatSee MCP key", "password": True}
+        ]
+        vscode["servers"][SERVER_NAME]["headers"] = {"Authorization": "Bearer ${input:chatsee-mcp-key}"}
+    write_json(".vscode/mcp.json", vscode, target)
 
 
 def cursor_server_config() -> dict:
@@ -384,6 +393,7 @@ def check() -> int:
             ".cursor/mcp.json",
             ".cursor/hooks.json",
             ".github/mcp.json",
+            ".vscode/mcp.json",
             *(("gemini-extension.json", "GEMINI.md") if AUTH_MODE == "oauth" else ()),
         ):
             live = ROOT / rel
