@@ -307,12 +307,7 @@ def build_copilot(target: Path) -> None:
 
 
 def cursor_server_config() -> dict:
-    # Cursor drops a trailing slash from the server URL before checking it against the
-    # protected resource the MCP advertises (".../mcp/"), sees ".../mcp" as shorter, and
-    # refuses to sign in. Gemini CLI and VS Code need the advertised ".../mcp/" exactly, so
-    # the server keeps it, and Cursor gets a URL that doesn't end in "/": the query keeps the
-    # path at "/mcp/" and the MCP ignores it.
-    return {"url": MCP_URL + "?client=cursor", "headers": auth_headers("cursor")}
+    return {"url": MCP_URL, "headers": auth_headers("cursor")}
 
 
 def build_cursor(target: Path) -> None:

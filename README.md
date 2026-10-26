@@ -154,9 +154,7 @@ left out of version control.
 → **Allow**. Then use Copilot Chat in **Agent** mode: *"list my ChatSee agents"*.
 
 **Cursor:** open the project in Cursor, then **Settings → MCP**: `chatsee` shows **Needs
-login**. Click it to sign in with ChatSee, then ask in the Agent chat. Cursor's config uses the MCP address with `?client=cursor` on the end: Cursor drops a trailing
-slash before checking the address the server advertises, and the query keeps it intact. Keep it
-if you copy the config by hand.
+login**. Click it to sign in with ChatSee, then ask in the Agent chat.
 
 Copilot's other surfaces:
 
