@@ -171,11 +171,11 @@ configured in GitHub, not from a file.
 
 **Copilot CLI** (the `copilot` command) installs this repository as a plugin: the four skills
 plus the `chatsee` MCP server. It can't pick a branch from GitHub, so add the marketplace from a
-clone of this branch:
+clone of this branch (pass the clone's full path: a relative path is read as a GitHub repo name):
 
 ```bash
 git clone -b chatsee-qa https://github.com/ChatSee/Chatsee-Skills.git
-copilot plugin marketplace add ./Chatsee-Skills
+copilot plugin marketplace add "$PWD/Chatsee-Skills"   # a FULL path; Windows cmd: "%CD%\Chatsee-Skills"
 copilot plugin install chatsee-skills@chatsee     # "Installed 4 skills"
 copilot mcp list                                  # Plugin servers: chatsee (http)
 ```
