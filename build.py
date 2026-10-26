@@ -54,7 +54,7 @@ MCP_URLS = {
     "dev": "https://dev-react.chatsee.ai/mcp/",
     "qa": "https://qa.chatsee.ai/mcp/",  # the trailing slash matters: /mcp without it is not routed on QA
 }
-ENVIRONMENT = "dev"
+ENVIRONMENT = "qa"
 MCP_URL = MCP_URLS[ENVIRONMENT]
 AUTH_MODE = "oauth"  # sign in with ChatSee; no key in any generated config
 

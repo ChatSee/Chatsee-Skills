@@ -2,7 +2,7 @@
   "servers": {
     "chatsee": {
       "type": "http",
-      "url": "https://dev-react.chatsee.ai/mcp/"
+      "url": "https://qa.chatsee.ai/mcp/"
     }
   }
 }
