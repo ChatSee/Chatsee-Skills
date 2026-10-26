@@ -174,7 +174,7 @@ plus the `chatsee` MCP server. It can't pick a branch from GitHub, so add the ma
 clone of this branch:
 
 ```bash
-git clone -b chatsee-dev https://github.com/ChatSee/Chatsee-Skills.git
+git clone -b chatsee-qa https://github.com/ChatSee/Chatsee-Skills.git
 copilot plugin marketplace add ./Chatsee-Skills
 copilot plugin install chatsee-skills@chatsee     # "Installed 4 skills"
 copilot mcp list                                  # Plugin servers: chatsee (http)
