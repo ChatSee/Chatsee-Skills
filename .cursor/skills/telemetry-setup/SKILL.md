@@ -150,12 +150,12 @@ certificates go unchecked on real prompt traffic. Always pass `verify_ssl=True` 
 (Confirmed by execution on both `0.10.0` and the current published `0.12.1` — this is not
 a version that got fixed.)
 
-**PII redaction: leave it off on `dev`.** `redaction_enabled=True` makes the SDK download
-its redaction rules from `/v1/redaction/fetch-classifiers` before every send. The dev APIs
-don't serve that endpoint yet (404), so the agent prints a "Failed to fetch redaction
-classifiers" warning on every turn and sends unredacted anyway. Pass
-`redaction_enabled=False` on `dev`, mention to the developer that redaction exists, and
-turn it on only for an environment that serves the endpoint.
+**PII redaction: leave it off on `dev` and `qa`.** `redaction_enabled=True` makes the SDK
+download its redaction rules from `/v1/redaction/fetch-classifiers` before every send. The dev
+and QA APIs don't serve that endpoint yet (404), so the agent prints a "Failed to fetch
+redaction classifiers" warning on every turn and sends unredacted anyway. Pass
+`redaction_enabled=False` when `list_my_agents` reports `dev` or `qa`, mention to the developer
+that redaction exists, and turn it on only for an environment that serves the endpoint.
 
 **Always send `metadata`.** A free-form dict the SDK forwards verbatim, and it costs nothing.
 At minimum `model` and `code_version` (a git sha): without them "did this start when we

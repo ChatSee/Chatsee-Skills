@@ -47,7 +47,15 @@ ROOT = Path(__file__).resolve().parent
 CANONICAL = ROOT / "skills"
 
 # ── The two things that change before we publish ────────────────────────────
-MCP_URL = "https://dev-react.chatsee.ai/mcp/"  # dev, sign-in; main stays on gcp-demo + keys until release (CSA-4027)
+# Each environment's sign-in MCP. A branch builds its own environment by default (ENVIRONMENT
+# below: chatsee-dev -> dev, chatsee-qa -> qa), so `build.py --check` passes on that branch;
+# `--env` builds another one. main stays on gcp-demo + keys until release (CSA-4027).
+MCP_URLS = {
+    "dev": "https://dev-react.chatsee.ai/mcp/",
+    "qa": "https://qa.chatsee.ai/mcp/",  # the trailing slash matters: /mcp without it is not routed on QA
+}
+ENVIRONMENT = "dev"
+MCP_URL = MCP_URLS[ENVIRONMENT]
 AUTH_MODE = "oauth"  # sign in with ChatSee; no key in any generated config
 
 VERSION = "1.0.0"
@@ -412,7 +420,11 @@ def check() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--check", action="store_true", help="exit 1 if any bundle is stale")
+    ap.add_argument("--env", choices=sorted(MCP_URLS), default=ENVIRONMENT,
+                    help=f"which ChatSee environment the bundles connect to (default: {ENVIRONMENT})")
     args = ap.parse_args()
+    global MCP_URL
+    MCP_URL = MCP_URLS[args.env]
 
     if args.check:
         return check()
