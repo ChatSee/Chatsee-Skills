@@ -21,7 +21,8 @@ then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini
 ---
 
 > **Branch `chatsee-qa`: the ChatSee QA environment.** The MCP is `https://qa.chatsee.ai/mcp/`
-> and you **sign in with your ChatSee account**; there is no API key to set. `main` still targets
+> and you **sign in with your ChatSee account**; there is no ChatSee API key to set (your coding agent
+> still needs its own sign-in or API key, as usual). `main` still targets
 > gcp-demo with an MCP key until the sign-in release.
 
 ## What you get
@@ -38,7 +39,7 @@ Four skills, one MCP, one loop — **observe → ask what's wrong → fix the pr
 Every step is **transparent and developer-invoked** — you ask, see the evidence, and approve the change. Nothing is applied silently.
 
 > 💡 Ask *"what's my agent breaking?"* at the start of a session to see recent failures. (The
-> automatic startup check needs an API key, so it is off on this branch. See [Startup check](#-startup-check).)
+> automatic startup check needs a ChatSee API key, so it is off on this branch. See [Startup check](#-startup-check).)
 
 ---
 
@@ -52,6 +53,8 @@ skill.
 
 **Signing in.** The first time the editor uses ChatSee, your browser opens on ChatSee: sign in,
 click **Continue**, then **Allow**. The editor sees only the agents your ChatSee account can see.
+This replaces the ChatSee API key only: your coding agent itself still needs its own sign-in or
+API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHub Copilot access).
 
 **The loop, end to end:**
 
