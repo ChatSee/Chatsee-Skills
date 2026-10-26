@@ -169,17 +169,19 @@ An administrator then adds the MCP server (`https://qa.chatsee.ai/mcp/`) under
 **Settings → Copilot → MCP servers**. There is no one-click bundle for Copilot; this half is
 configured in GitHub, not from a file.
 
-**Copilot CLI** — personal skills go in `~/.copilot/skills/`, and a project `.mcp.json` or
-`.github/mcp.json` is honoured:
+**Copilot CLI** (the `copilot` command) installs this repository as a plugin: the four skills
+plus the `chatsee` MCP server. It can't pick a branch from GitHub, so add the marketplace from a
+clone of this branch:
 
 ```bash
-cp -R /path/to/ChatSee-Skills/skills/* ~/.copilot/skills/
+git clone -b chatsee-dev https://github.com/ChatSee/Chatsee-Skills.git
+copilot plugin marketplace add ./Chatsee-Skills
+copilot plugin install chatsee-skills@chatsee     # "Installed 4 skills"
+copilot mcp list                                  # Plugin servers: chatsee (http)
 ```
 
-> ⚠️ **Unverified.** `.github/mcp.json` is generated with an inferred remote-server schema.
-> GitHub documents the *local* shape (`"type": "local"` with `command`/`args`/`tools`) and does
-> not publish the remote one, and this has not been run against a real Copilot CLI install.
-> Confirm before relying on it.
+Then start `copilot` and ask *"list my ChatSee agents"*; it opens the browser to sign in with
+ChatSee the first time.
 
 <details>
 <summary><b>Manual install (any editor, no plugin system)</b></summary>
@@ -204,7 +206,7 @@ Create `.env` at your repo root (see [`.env.example`](.env.example)), **add it t
 |---|---|---|
 | `skills/` | — | **canonical source — edit here** |
 | `.claude-plugin/` + `.mcp.json` + `hooks/` | Claude Code | reads `./skills/` directly |
-| `.codex-plugin/` + `marketplace.json` | Codex | reads `./skills/` directly |
+| `.codex-plugin/` | Codex | reads `./skills/` directly; shares `.claude-plugin/marketplace.json` |
 | `platforms/gemini/` | Gemini CLI | own directory + skills copy |
 | `.claude/skills/` | Claude Code (project) | generated mirror |
 | `.cursor/` | Cursor | generated mirror + config |

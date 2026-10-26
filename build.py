@@ -185,22 +185,10 @@ def build_codex(target: Path) -> None:
         },
         target,
     )
-    write_json(
-        "marketplace.json",
-        {
-            "name": "chatsee",
-            "interface": {"displayName": "ChatSee Skills"},
-            "plugins": [
-                {
-                    "name": "chatsee-skills",
-                    "source": {"source": "local", "path": "./"},
-                    "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-                    "category": "Developer Tools",
-                }
-            ],
-        },
-        target,
-    )
+    # No root marketplace.json: Codex reads .claude-plugin/marketplace.json (verified), and GitHub
+    # Copilot CLI, which also reads plugin marketplaces, finds a root one first and rejects the
+    # Codex-specific shape ("owner: Required"). One marketplace file serves Claude Code, Codex and
+    # Copilot CLI.
 
 
 def build_gemini(target: Path) -> None:
@@ -396,7 +384,6 @@ def check() -> int:
             ".mcp.json",
             "hooks/hooks.json",
             ".codex-plugin/plugin.json",
-            "marketplace.json",
             "platforms/gemini/gemini-extension.json",
             ".cursor/mcp.json",
             ".cursor/hooks.json",
