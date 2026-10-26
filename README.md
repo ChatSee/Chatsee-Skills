@@ -89,6 +89,11 @@ Start `claude` (or reopen the VS Code panel), then sign in: `/mcp` → **chatsee
 **Authenticate**. `/mcp` should show `chatsee ✔ connected`, and *"list my ChatSee agents"*
 should list your agents.
 
+> **Switching between ChatSee environments** (for example dev and QA, or an older key-based
+> install)? Claude Code and Codex remember where the `chatsee` marketplace came from and refuse
+> a different source. Remove it first: `claude plugin marketplace remove chatsee` /
+> `codex plugin marketplace remove chatsee`, then add the new branch.
+
 ### 🟢 Codex
 
 Run these **in your terminal** (Codex **v0.117+**):
