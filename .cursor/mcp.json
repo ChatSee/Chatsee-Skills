@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "chatsee": {
-      "url": "https://qa.chatsee.ai/mcp/",
+      "url": "https://qa.chatsee.ai/mcp/?client=cursor",
       "headers": {}
     }
   }
