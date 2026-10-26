@@ -42,6 +42,48 @@ Every step is **transparent and developer-invoked** — you ask, see the evidenc
 
 ---
 
+## How the skills work
+
+The plugin installs two things: the **ChatSee MCP server** (the connection, with four tools:
+`list_my_agents`, `ask_guardian`, `get_remediations`, `apply_remediations`) and the **four
+skills** (instructions that tell your coding agent how to do a whole job with those tools). A
+single lookup such as *"list my ChatSee agents"* just calls a tool; a multi-step job follows a
+skill.
+
+**Signing in.** The first time the editor uses ChatSee, your browser opens on ChatSee: sign in,
+click **Continue**, then **Allow**. The editor sees only the agents your ChatSee account can see.
+
+**The loop, end to end:**
+
+1. **Create the agent in ChatSee** (portal: **Settings → Add agent**, type *interaction* +
+   *custom*). That gives it its IDs. The skills can't create agents.
+2. **`telemetry-setup`** adds the official `chatsee-ai` SDK to your agent's code. It gets the
+   agent's `agent_id`, `tenant_id` and environment from your account via `list_my_agents` (no
+   key), installs the SDK, writes them to the project's `.env` (and checks `.env` is
+   gitignored), and wraps your agent's conversation loop so each turn (user message, tool calls,
+   answer, errors) is sent to ChatSee. You review the change, then run your agent as normal.
+   PII redaction is left off on dev and QA, which don't serve it yet.
+3. **ChatSee analyses the conversations** (errors, clusters, suggested fixes). This takes from a
+   few minutes to about 90 minutes.
+4. **`guardian-query`** asks the Guardian, in plain English, what's going wrong: top error codes,
+   clusters, anomalies, sentiment. Read-only. *"Nothing detected"* can mean the analysis hasn't
+   finished, not that the agent is healthy.
+5. **A person approves fixes** in the ChatSee portal. Detecting an error doesn't create a fix,
+   and nothing bridges this step automatically.
+6. **`remediation`** fetches the *approved* fixes (`get_remediations`), shows them, adds them to
+   your agent's system prompt as a marked block (showing you the diff first), and then marks
+   them applied in ChatSee (`apply_remediations`). An empty result means nothing is approved yet.
+7. **`structural-correction`** handles failures a prompt change can't fix (cut-off replies, wrong
+   or repeated tool calls, loops, failures that grow with conversation length): it asks the
+   Guardian for evidence, finds the cause in your code and **proposes** a fix for you to approve.
+   It needs no approval in ChatSee, and code fixes aren't reported back to ChatSee.
+
+**Editors:** Claude Code (terminal and VS Code), Codex, Gemini CLI, GitHub Copilot (VS Code and
+Copilot CLI). **Cursor** doesn't sign in yet: it trims the trailing slash from the server
+address before checking it, which needs a server routing change to resolve.
+
+---
+
 ## Prerequisites
 
 Before installing, make sure you have:
