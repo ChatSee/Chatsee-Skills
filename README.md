@@ -74,6 +74,8 @@ remove access any time by clearing the editor's authentication for `chatsee`.
 
 ### 🟣 Claude Code
 
+📖 **Step-by-step guide with screenshots (terminal and VS Code): [docs/install-claude-code.md](docs/install-claude-code.md)**
+
 Run these **in your terminal**:
 
 ```bash
