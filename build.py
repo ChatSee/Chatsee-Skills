@@ -56,6 +56,9 @@ MCP_URLS = {
 }
 ENVIRONMENT = "qa"
 MCP_URL = MCP_URLS[ENVIRONMENT]
+# Cursor strips the trailing slash from MCP_URL and then rejects the advertised resource, so it
+# gets its own address with nothing to strip. The MCP serves it as the same endpoint.
+CURSOR_MCP_URL = MCP_URL.rstrip("/") + "/cursor"
 AUTH_MODE = "oauth"  # sign in with ChatSee; no key in any generated config
 
 VERSION = "1.0.0"
@@ -307,7 +310,7 @@ def build_copilot(target: Path) -> None:
 
 
 def cursor_server_config() -> dict:
-    return {"url": MCP_URL, "headers": auth_headers("cursor")}
+    return {"url": CURSOR_MCP_URL, "headers": auth_headers("cursor")}
 
 
 def build_cursor(target: Path) -> None:
