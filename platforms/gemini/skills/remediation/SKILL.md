@@ -1,6 +1,6 @@
 ---
 name: remediation
-description: Show an agent's ChatSee remediations with their portal status (Open, Proposed, In progress, Live), let the developer approve the ones waiting for approval, fold the approved (Live) rules into that agent's system prompt, then confirm them applied. The transparent, developer-invoked form of the closed loop, for prompt-level fixes. (Skill 2 of 4.)
+description: Show an agent's ChatSee remediations with their portal status (Open, Proposed, In progress, Implemented), let the developer approve the ones waiting for approval, fold the approved (Implemented) rules into that agent's system prompt, then confirm them applied. The transparent, developer-invoked form of the closed loop, for prompt-level fixes. (Skill 2 of 4.)
 ---
 
 # Remediation (skill 2)
@@ -44,17 +44,17 @@ in the portal:
 | **Open** | Logged; may or may not have a fix yet | Approve and apply, if it has a fix; otherwise nothing |
 | **Proposed** | A fix is waiting for sign-off | Approve and apply |
 | **In progress** | Being worked on, not signed off | Approve and apply |
-| **Live** (stored as *implemented*) | Approved. The fix should be in effect | Apply, or nothing if it is already in the prompt |
-| **Regressed** | Was Live, then marked as not working | Approve and apply again |
+| **Implemented** | Approved. The fix should be in effect | Apply, or nothing if it is already in the prompt |
+| **Regressed** | Was Implemented, then marked as not working | Approve and apply again |
 
 Two kinds are never applied to a prompt: a remediation **with no fix yet**, and a **Jira**
 remediation (its work ships through the ticket). `list_remediations` marks both `none`.
 
-**Approving = the portal's Approve & Apply.** It sets the status to **Live** in ChatSee, with
+**Approving = the portal's Approve & Apply.** It sets the status to **Implemented** in ChatSee, with
 the same history and versioning as the portal button. It needs the **SRE or Admin** role, the
 same as in the portal; `list_remediations` returns `can_approve` for the signed-in person.
 
-**Nothing Live is not "healthy".** It means nothing is approved yet. Say how many are waiting
+**Nothing Implemented is not "healthy".** It means nothing is approved yet. Say how many are waiting
 (Proposed, In progress, Open), and run **skill 4** to show what was actually detected.
 
 ## Which agent
@@ -124,13 +124,13 @@ with, so nothing needs a key:
   `status_label`, `next_step`, `reason`, the rule text (`fix`) and `can_approve`.
   **Read-only**: call it as often as you like.
 - `approve_remediation(failure_memory_id, agent_name)` — the portal's Approve & Apply for ONE
-  remediation; it becomes **Live**. **State-changing, in the portal.** Only after the
+  remediation; it becomes **Implemented**. **State-changing, in the portal.** Only after the
   developer's explicit yes for that remediation (Steps, below).
-- `get_remediations(mode, agent_name)` — the **Live** rules only, as `skills_markdown` (each
+- `get_remediations(mode, agent_name)` — the **Implemented** rules only, as `skills_markdown` (each
   rule labelled with its FM code) plus the `failure_memory_ids` you confirm later. `mode` is
   `all` (default) or `pending`.
 - `apply_remediations(failure_memory_ids, details, agent_name)` — acknowledge rules that are
-  now in the prompt. Refuses anything not Live. **State-changing.**
+  now in the prompt. Refuses anything not Implemented. **State-changing.**
 
 For the file edit itself, `scripts/apply_to_prompt.py` is still the shortcut for the two
 mechanical shapes. Give it the rules you fetched rather than letting it fetch them:
@@ -146,7 +146,7 @@ mechanical shapes. Give it the rules you fetched rather than letting it fetch th
 
 ## Two separate states. Read this before interpreting any output.
 
-1. **Status** (the portal's, table above): has a person approved it? Only **Live** may be applied.
+1. **Status** (the portal's, table above): has a person approved it? Only **Implemented** may be applied.
 2. **In the prompt or not** (`in_prompt`, from ChatSee's delivery record): has a coding agent
    put it in this agent's prompt? Behind it are three delivery states you may see in raw output:
 
@@ -164,24 +164,24 @@ instead and **defaults to `all`**. `list_remediations` changes nothing.
 ## Steps
 1. **Show.** Call `list_remediations` (with `agent_name` if needed). Show a table, newest
    first: FM code · title · status (portal words) · what can be done (from `next_step`):
-   - `apply`: "Live, ready to apply"
-   - `done`: "Live, already in the prompt"
+   - `apply`: "Implemented, ready to apply"
+   - `done`: "Implemented, already in the prompt"
    - `approve_and_apply`: "<status>, needs approval"
    - `none`: the `reason` (no fix yet / Jira)
 
-   Add one line of counts, e.g. "2 Live (1 already applied) · 1 Proposed · 1 Open, no fix".
-2. **Let the developer choose.** Offer: apply the Live ones, and approve any of the
+   Add one line of counts, e.g. "2 Implemented (1 already applied) · 1 Proposed · 1 Open, no fix".
+2. **Let the developer choose.** Offer: apply the Implemented ones, and approve any of the
    `approve_and_apply` ones. If `can_approve` is false, say that approving needs an SRE or
-   Admin (`approval_note`) and continue with the Live ones only.
+   Admin (`approval_note`) and continue with the Implemented ones only.
 3. **Approve one at a time, only on an explicit yes.** For each remediation the developer
-   wants approved, show its `fix` text and ask: *"Approve FM-003 in ChatSee? It becomes Live."*
+   wants approved, show its `fix` text and ask: *"Approve FM-003 in ChatSee? It becomes Implemented."*
    Call `approve_remediation` only after a clear yes for **that** remediation. Never approve
    because the developer said "apply the fixes", never approve several on one vague yes, and
    never approve on your own initiative. Report each result; if one is refused, show the
    tool's message and carry on with the rest.
-4. **Fetch the Live rules.** Call `get_remediations` with `mode: "all"`. The managed block in
-   the prompt holds **every Live rule**, because Live means "in effect": the ones already
-   applied stay, newly approved ones join. If the developer does not want a Live rule in
+4. **Fetch the Implemented rules.** Call `get_remediations` with `mode: "all"`. The managed block in
+   the prompt holds **every Implemented rule**, because Implemented means "in effect": the ones already
+   applied stay, newly approved ones join. If the developer does not want a Implemented rule in
    effect, that is a decision for the portal (mark it Regressed), not something to drop
    silently here.
 5. **Apply.** Save that output as JSON to `.chatsee/rules.json` beside the agent's code. Find
@@ -198,7 +198,7 @@ instead and **defaults to `all`**. `list_remediations` changes nothing.
    sees the same statuses the portal now shows.
 
 ## Closed-loop alignment
-Approving sets the portal status to Live (`implemented`); applying moves the
+Approving sets the portal status to Implemented (`implemented`); applying moves the
 `failure_memory`'s delivery record through `Created → Delivered → Applied` (`mcp_delivery`). The MCP `apply_remediations` tool and the SDK's
 `POST /v1/api/closed-loop/acknowledge-remediations` are two doors to the same transition;
 our marker block *is* the "inject the skill into the prompt" step it expects first.
