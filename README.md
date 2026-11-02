@@ -32,7 +32,7 @@ Four skills, one MCP, one loop — **observe → ask what's wrong → fix the pr
 | Skill | What it does |
 |-------|--------------|
 | 🛰️ **`telemetry-setup`** | Instrument your agent so each turn streams to the Guardian. |
-| 🩹 **`remediation`** | Pull the Guardian's approved prompt-fixes and apply them. |
+| 🩹 **`remediation`** | Show remediations with their ChatSee status, approve the waiting ones, apply the Live ones. |
 | 🛠️ **`structural-correction`** | Diagnose deeper *code* bugs and propose fixes. |
 | 🔎 **`guardian-query`** | Ask the Guardian, in plain English, what's going wrong. |
 
@@ -45,8 +45,9 @@ Every step is **transparent and developer-invoked** — you ask, see the evidenc
 
 ## How the skills work
 
-The plugin installs two things: the **ChatSee MCP server** (the connection, with four tools:
-`list_my_agents`, `ask_guardian`, `get_remediations`, `apply_remediations`) and the **four
+The plugin installs two things: the **ChatSee MCP server** (the connection, with six tools:
+`list_my_agents`, `ask_guardian`, `list_remediations`, `approve_remediation`,
+`get_remediations`, `apply_remediations`) and the **four
 skills** (instructions that tell your coding agent how to do a whole job with those tools). A
 single lookup such as *"list my ChatSee agents"* just calls a tool; a multi-step job follows a
 skill.
@@ -71,11 +72,15 @@ API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHu
 4. **`guardian-query`** asks the Guardian, in plain English, what's going wrong: top error codes,
    clusters, anomalies, sentiment. Read-only. *"Nothing detected"* can mean the analysis hasn't
    finished, not that the agent is healthy.
-5. **A person approves fixes** in the ChatSee portal. Detecting an error doesn't create a fix,
-   and nothing bridges this step automatically.
-6. **`remediation`** fetches the *approved* fixes (`get_remediations`), shows them, adds them to
-   your agent's system prompt as a marked block (showing you the diff first), and then marks
-   them applied in ChatSee (`apply_remediations`). An empty result means nothing is approved yet.
+5. **A person approves fixes.** Each remediation has the status the portal shows: Open,
+   Proposed, In progress or **Live**. Approving (Approve & Apply) makes it Live. It needs the
+   SRE or Admin role, in the portal or from your editor in the next step.
+6. **`remediation`** lists the agent's remediations with their status and FM code
+   (`list_remediations`). You choose: approve waiting ones one at a time, on your explicit yes
+   (`approve_remediation`), then it adds every Live fix to your agent's system prompt as a
+   marked block (showing you the diff first) and records them as applied in ChatSee
+   (`apply_remediations`). Nothing Live means nothing is approved yet, not that the agent is
+   healthy.
 7. **`structural-correction`** handles failures a prompt change can't fix (cut-off replies, wrong
    or repeated tool calls, loops, failures that grow with conversation length): it asks the
    Guardian for evidence, finds the cause in your code and **proposes** a fix for you to approve.

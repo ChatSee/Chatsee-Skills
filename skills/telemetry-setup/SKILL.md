@@ -12,7 +12,7 @@ skills 2–4 can act on it.
 **Subject = the agent's real end-user conversations**, never the Claude Code session.
 
 ## First: is ChatSee connected?
-Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `list_remediations`, `get_remediations`,
 `apply_remediations`). If they are missing, or a call fails with an authentication error,
 **stop and tell the developer to sign in**, then retry:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate**

@@ -12,7 +12,7 @@ happening in production. Read-only.
 reads; skill 3 = *Claude* consumes the same data and proposes fixes.
 
 ## First: is ChatSee connected?
-Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `list_remediations`, `get_remediations`,
 `apply_remediations`). If they are missing, or a call fails with an authentication error,
 **stop and tell the developer to sign in**, then retry:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate**
@@ -33,10 +33,13 @@ described below are only for CI setups where a key was deliberately provided.
 agent has no telemetry. Not evidence of a healthy agent.
 
 **Detecting an error does not create a fix.** Between this skill and skill 2 sits a human
-approval step: someone reviews ChatSee's suggested rules in the dashboard and approves the
-ones worth shipping. Nothing bridges the two automatically, and that gate is deliberate —
-skill 2 rewrites a production system prompt. So when the developer wants something fixed:
-- **prompt-level** → tell them what needs approving, then skill 2 applies it
+approval step: a person (SRE or Admin) reviews ChatSee's suggested fix and approves it,
+which makes it **Live**. That happens in the portal (Remediations → Approve & Apply) or in
+skill 2, one remediation at a time on the developer's explicit yes. Nothing bridges the two
+automatically, and that gate is deliberate: skill 2 rewrites a production system prompt.
+So when the developer wants something fixed:
+- **prompt-level** → skill 2: it shows each remediation's status (Open, Proposed,
+  In progress, Live), lets them approve the waiting ones, and applies the Live ones
 - **code-level** → skill 3, which needs no approval because it only proposes
 
 Say which of the two you are recommending and why, rather than jumping straight to a fix.

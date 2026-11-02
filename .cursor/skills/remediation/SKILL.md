@@ -1,18 +1,19 @@
 ---
 name: remediation
-description: Fetch the ChatSee Guardian's approved remediation rules for an agent and fold them into that agent's system prompt, then confirm them applied. The transparent, developer-invoked form of the closed loop, for prompt-level fixes. (Skill 2 of 4.)
+description: Show an agent's ChatSee remediations with their portal status (Open, Proposed, In progress, Live), let the developer approve the ones waiting for approval, fold the approved (Live) rules into that agent's system prompt, then confirm them applied. The transparent, developer-invoked form of the closed loop, for prompt-level fixes. (Skill 2 of 4.)
 ---
 
 # Remediation (skill 2)
 
-Pulls the Guardian's approved fix-rules and applies them to the target agent's **system
-prompt** — transparent and developer-invoked: you see the diff before anything is written.
-Wired to the real ChatSee Recommendations MCP server (`_shared/guardian_client.py`).
-Live only — there is no mock.
+Shows the agent's remediations as ChatSee shows them, lets the developer approve the ones
+still waiting, and applies the approved rules to the target agent's **system prompt**:
+transparent and developer-invoked, you see the diff before anything is written.
+Wired to the real ChatSee Recommendations MCP server. Live only, there is no mock.
 
 ## First: is ChatSee connected?
-Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
-`apply_remediations`). If they are missing, or a call fails with an authentication error,
+Use the ChatSee MCP tools (`list_my_agents`, `list_remediations`, `approve_remediation`,
+`get_remediations`, `apply_remediations`, `ask_guardian`). If they are missing, or a call
+fails with an authentication error,
 **stop and tell the developer to sign in**, then retry:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate**
 - Gemini CLI: `/mcp auth chatsee`
@@ -28,26 +29,42 @@ described below are only for CI setups where a key was deliberately provided.
 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → ▶ 2 apply → 3 code fix
 ```
 
-**This skill reads *approved fixes*, not detected errors.** Detection is automatic; approval
-is a deliberate human step in the ChatSee dashboard. An agent can carry dozens of incidents
-and still have zero approved fixes.
+**This skill applies *approved* fixes, not detected errors.** Detection is automatic;
+approval is a deliberate human decision, made in the ChatSee portal or here, by the developer,
+one remediation at a time. An agent can carry dozens of incidents and still have nothing
+approved.
 
-**An empty result means nothing has been APPROVED — never that the agent is healthy.** The
-Guardian's own wording for it (*"No failure memory entries for this agent"*) reads like an
-all-clear and must not be relayed as one. When it comes back empty:
-1. Run **skill 4** to show what was actually detected — lead with that, not with the emptiness.
-2. Tell the developer which errors are worth approving, and that approval happens in the
-   ChatSee dashboard. (For testing without the UI, the same two REST calls are
-   `POST /v1/error_recommendations/fetch_recommendations` then `…/submit_applied_recommendations`.)
-3. Re-run this skill once something is approved.
+## Use ChatSee's words for status
+A remediation has a **status**, and it is the one the portal's Remediations screen shows.
+Always use these words and the **FM code** (FM-004…), so the developer can find the same row
+in the portal:
+
+| Status (portal) | Means | What this skill offers (`next_step`) |
+|---|---|---|
+| **Open** | Logged; may or may not have a fix yet | Approve and apply, if it has a fix; otherwise nothing |
+| **Proposed** | A fix is waiting for sign-off | Approve and apply |
+| **In progress** | Being worked on, not signed off | Approve and apply |
+| **Live** (stored as *implemented*) | Approved. The fix should be in effect | Apply, or nothing if it is already in the prompt |
+| **Regressed** | Was Live, then marked as not working | Approve and apply again |
+
+Two kinds are never applied to a prompt: a remediation **with no fix yet**, and a **Jira**
+remediation (its work ships through the ticket). `list_remediations` marks both `none`.
+
+**Approving = the portal's Approve & Apply.** It sets the status to **Live** in ChatSee, with
+the same history and versioning as the portal button. It needs the **SRE or Admin** role, the
+same as in the portal; `list_remediations` returns `can_approve` for the signed-in person.
+
+**Nothing Live is not "healthy".** It means nothing is approved yet. Say how many are waiting
+(Proposed, In progress, Open), and run **skill 4** to show what was actually detected.
 
 ## Which agent
-**Signed in with ChatSee (the normal case):** pass `agent_name` to `get_remediations` and
-`apply_remediations`. You can reach only agents the signed-in person is assigned, the same
-as in the dashboard. If they have one agent, it is used automatically; if several, the tool
-returns their list — call `list_my_agents` or ask which one, never guess.
+**Signed in with ChatSee (the normal case):** pass `agent_name` to every remediation tool.
+You can reach only agents the signed-in person is assigned, the same as in the portal. If
+they have one agent, it is used automatically; if several, the tool returns their list:
+call `list_my_agents` or ask which one, never guess.
 
-**Using an API key instead:** the key is bound to one agent, so no name is passed.
+**Using an API key instead:** the key is bound to one agent, so no name is passed, and
+nothing can be approved (an approval needs a person): approve in the portal.
 
 ## Where the prompt lives is YOUR problem to solve, not the script's
 
@@ -103,10 +120,17 @@ agent sends; that is a case for editing by hand.
 Talk to ChatSee **through the MCP tools** — they use the connection the developer signed in
 with, so nothing needs a key:
 
-- `get_remediations(mode, agent_name)` — the approved rules, as `skills_markdown` plus the
-  `failure_memory_ids` you confirm later. `mode` is `all` (default) or `pending`.
+- `list_remediations(agent_name)` — every remediation with `fm_code`, `title`,
+  `status_label`, `next_step`, `reason`, the rule text (`fix`) and `can_approve`.
+  **Read-only**: call it as often as you like.
+- `approve_remediation(failure_memory_id, agent_name)` — the portal's Approve & Apply for ONE
+  remediation; it becomes **Live**. **State-changing, in the portal.** Only after the
+  developer's explicit yes for that remediation (Steps, below).
+- `get_remediations(mode, agent_name)` — the **Live** rules only, as `skills_markdown` (each
+  rule labelled with its FM code) plus the `failure_memory_ids` you confirm later. `mode` is
+  `all` (default) or `pending`.
 - `apply_remediations(failure_memory_ids, details, agent_name)` — acknowledge rules that are
-  now in the prompt. **State-changing.**
+  now in the prompt. Refuses anything not Live. **State-changing.**
 
 For the file edit itself, `scripts/apply_to_prompt.py` is still the shortcut for the two
 mechanical shapes. Give it the rules you fetched rather than letting it fetch them:
@@ -120,47 +144,62 @@ mechanical shapes. Give it the rules you fetched rather than letting it fetch th
 `fetch_remediation.py`, `apply_to_prompt.py … --confirm` (no `--rules-file`), and
 `confirm_applied.py`. They read `CHATSEE_MCP_KEY`.
 
-## A fix has ONE state. Read this before interpreting any output.
+## Two separate states. Read this before interpreting any output.
 
-| State | Means |
+1. **Status** (the portal's, table above): has a person approved it? Only **Live** may be applied.
+2. **In the prompt or not** (`in_prompt`, from ChatSee's delivery record): has a coding agent
+   put it in this agent's prompt? Behind it are three delivery states you may see in raw output:
+
+| Delivery state | Means |
 |---|---|
-| **Created** | A human approved it in the dashboard. Nobody has downloaded it yet. |
-| **Delivered** | It has been downloaded. Says nothing about whether it was applied. |
-| **Applied** | The developer confirmed it is in the agent's prompt. |
-| **Rejected** | Declined in the dashboard. |
+| **Created** | Approved, never fetched by a coding agent. |
+| **Delivered** | Fetched. Says nothing about whether it was applied. |
+| **Applied** | Confirmed in the agent's prompt (`in_prompt: true`). |
 
-There is no separate "marked" concept — the Guardian's `"Skill marked as Applied."` is just
-its wording for "the state is now Applied".
-
-⚠️ **Downloading a rule changes its state** (`Created → Delivered`). There is no way to look
-without marking it delivered. So the server's `pending` really means *"never downloaded"*, not
-*"waiting to be applied"* — a rule stops being pending the moment you read it, even though
-nothing has been applied. This skill therefore says **`new`** instead of `pending`, and
-**defaults everything to `all`**.
-
-**Two different empty results — do not confuse them:**
-- *"No pending remediations."* → nothing **new**. There may be plenty already downloaded;
-  re-run with `all`.
-- *"No failure memory entries for this agent."* → nothing has been **approved** at all. This
-  is the one that needs a human in the dashboard.
+Delivery states are **not** portal statuses; never present "Delivered" or "Applied" as the
+remediation's status. Fetching with `get_remediations` moves a rule `Created → Delivered`, so
+its `pending` means *"never fetched"*, not *"waiting to be applied"*; this skill says **new**
+instead and **defaults to `all`**. `list_remediations` changes nothing.
 
 ## Steps
-1. Call `get_remediations` (with `agent_name` if needed) and show the developer every
-   approved rule. Use `mode: "pending"` only for rules never downloaded before.
-2. Save that tool output as JSON to `.chatsee/rules.json` beside the agent's code.
-3. Find the prompt. For a prose file or a Python literal, run
-   `apply_to_prompt.py <prompt-file> --rules-file .chatsee/rules.json` and show the diff —
-   nothing is written. For any other shape, edit by hand following the rules above.
-4. Re-run with `--write` to apply between `<!-- chatsee:failure-memory:start/end -->` markers
-   (re-running replaces the block, never duplicates it). Each apply appends a record to
+1. **Show.** Call `list_remediations` (with `agent_name` if needed). Show a table, newest
+   first: FM code · title · status (portal words) · what can be done (from `next_step`):
+   - `apply`: "Live, ready to apply"
+   - `done`: "Live, already in the prompt"
+   - `approve_and_apply`: "<status>, needs approval"
+   - `none`: the `reason` (no fix yet / Jira)
+
+   Add one line of counts, e.g. "2 Live (1 already applied) · 1 Proposed · 1 Open, no fix".
+2. **Let the developer choose.** Offer: apply the Live ones, and approve any of the
+   `approve_and_apply` ones. If `can_approve` is false, say that approving needs an SRE or
+   Admin (`approval_note`) and continue with the Live ones only.
+3. **Approve one at a time, only on an explicit yes.** For each remediation the developer
+   wants approved, show its `fix` text and ask: *"Approve FM-003 in ChatSee? It becomes Live."*
+   Call `approve_remediation` only after a clear yes for **that** remediation. Never approve
+   because the developer said "apply the fixes", never approve several on one vague yes, and
+   never approve on your own initiative. Report each result; if one is refused, show the
+   tool's message and carry on with the rest.
+4. **Fetch the Live rules.** Call `get_remediations` with `mode: "all"`. The managed block in
+   the prompt holds **every Live rule**, because Live means "in effect": the ones already
+   applied stay, newly approved ones join. If the developer does not want a Live rule in
+   effect, that is a decision for the portal (mark it Regressed), not something to drop
+   silently here.
+5. **Apply.** Save that output as JSON to `.chatsee/rules.json` beside the agent's code. Find
+   the prompt. For a prose file or a Python literal, run
+   `apply_to_prompt.py <prompt-file> --rules-file .chatsee/rules.json` and show the diff;
+   nothing is written. For any other shape, edit by hand following the rules above. Then
+   apply with `--write` (between `<!-- chatsee:failure-memory:start/end -->` markers;
+   re-running replaces the block, never duplicates it). Each apply appends a record to
    `.chatsee/applied.jsonl`.
-5. Once the rules are truly in place, call `apply_remediations` with the
+6. **Confirm.** Once the rules are truly in place, call `apply_remediations` with the
    `failure_memory_ids` and a note saying what changed.
-   ⚠️ **State-changing:** moves each failure memory `Delivered → Applied` on the Guardian.
+   ⚠️ **State-changing:** records each one as in the prompt (`Applied`).
+7. **Close.** Call `list_remediations` again and show the updated table, so the developer
+   sees the same statuses the portal now shows.
 
 ## Closed-loop alignment
-Applying a fix moves a `failure_memory` through `Created → Delivered → Applied`
-(`mcp_delivery`). The MCP `apply_remediations` tool and the SDK's
+Approving sets the portal status to Live (`implemented`); applying moves the
+`failure_memory`'s delivery record through `Created → Delivered → Applied` (`mcp_delivery`). The MCP `apply_remediations` tool and the SDK's
 `POST /v1/api/closed-loop/acknowledge-remediations` are two doors to the same transition;
 our marker block *is* the "inject the skill into the prompt" step it expects first.
 
