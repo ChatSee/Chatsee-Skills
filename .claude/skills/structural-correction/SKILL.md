@@ -10,7 +10,7 @@ Skill 2 applies *prompt-level* fixes; skill 4 *surfaces* insights to a human; sk
 prompt can't — context-window/memory handling, tool-wiring, control-flow bugs.
 
 ## First: is ChatSee connected?
-Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `get_remediations`,
+Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `list_remediations`, `get_remediations`,
 `apply_remediations`). If they are missing, or a call fails with an authentication error,
 **stop and tell the developer to sign in**, then retry:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate**
