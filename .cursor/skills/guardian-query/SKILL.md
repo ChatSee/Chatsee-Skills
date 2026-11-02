@@ -34,12 +34,12 @@ agent has no telemetry. Not evidence of a healthy agent.
 
 **Detecting an error does not create a fix.** Between this skill and skill 2 sits a human
 approval step: a person (SRE or Admin) reviews ChatSee's suggested fix and approves it,
-which makes it **Live**. That happens in the portal (Remediations → Approve & Apply) or in
+which makes it **Implemented**. That happens in the portal (Remediations → Approve & Apply) or in
 skill 2, one remediation at a time on the developer's explicit yes. Nothing bridges the two
 automatically, and that gate is deliberate: skill 2 rewrites a production system prompt.
 So when the developer wants something fixed:
 - **prompt-level** → skill 2: it shows each remediation's status (Open, Proposed,
-  In progress, Live), lets them approve the waiting ones, and applies the Live ones
+  In progress, Implemented), lets them approve the waiting ones, and applies the Implemented ones
 - **code-level** → skill 3, which needs no approval because it only proposes
 
 Say which of the two you are recommending and why, rather than jumping straight to a fix.
