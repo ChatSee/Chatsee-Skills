@@ -87,8 +87,8 @@ API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHu
    It needs no approval in ChatSee, and code fixes aren't reported back to ChatSee.
 
 **Editors:** Claude Code (terminal and VS Code), Codex, Gemini CLI, GitHub Copilot (VS Code and
-Copilot CLI). **Cursor** doesn't sign in yet: it trims the trailing slash from the server
-address before checking it, which needs a server routing change to resolve.
+Copilot CLI) and Cursor. Cursor uses its own server address, `/mcp/cursor`, which the installer
+sets for you.
 
 ---
 
@@ -203,8 +203,10 @@ left out of version control.
 **Start** above `"chatsee"`. VS Code asks to sign in; the browser opens ChatSee → **Continue**
 → **Allow**. Then use Copilot Chat in **Agent** mode: *"list my ChatSee agents"*.
 
-**Cursor:** open the project in Cursor, then **Settings → MCP**: `chatsee` shows **Needs
-login**. Click it to sign in with ChatSee, then ask in the Agent chat.
+**Cursor:** open the project in Cursor, then **Settings → MCP**: `chatsee` shows **Disabled**.
+Click it, check the project source is switched on and click **Authenticate**. The browser opens
+ChatSee → **Continue** → **Allow** → *Authorization complete*. Back in Cursor, `chatsee` shows
+**6 tools enabled**; ask in the Agent chat: *"list my ChatSee agents"*.
 
 Copilot's other surfaces:
 
