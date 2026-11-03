@@ -36,8 +36,8 @@ NEXT_STEPS = {
         "Sign in with ChatSee in the browser, then use Copilot Chat in Agent mode."
     ),
     "cursor": (
-        "Open this folder in Cursor, then Settings -> MCP: 'chatsee' shows 'Needs login'.\n"
-        "Click it, sign in with ChatSee in the browser, then use the Agent chat."
+        "Open this folder in Cursor, then Settings -> MCP: 'chatsee' shows 'Disabled'.\n"
+        "Click it, then Authenticate: sign in with ChatSee in the browser, then use the Agent chat."
     ),
 }
 
