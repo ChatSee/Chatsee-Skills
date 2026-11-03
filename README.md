@@ -45,8 +45,8 @@ Every step is **transparent and developer-invoked** — you ask, see the evidenc
 
 ## How the skills work
 
-The plugin installs two things: the **ChatSee MCP server** (the connection, with six tools:
-`list_my_agents`, `ask_guardian`, `list_remediations`, `approve_remediation`,
+The plugin installs two things: the **ChatSee MCP server** (the connection, with seven tools:
+`list_my_agents`, `create_agent`, `ask_guardian`, `list_remediations`, `approve_remediation`,
 `get_remediations`, `apply_remediations`) and the **four
 skills** (instructions that tell your coding agent how to do a whole job with those tools). A
 single lookup such as *"list my ChatSee agents"* just calls a tool; a multi-step job follows a
@@ -59,8 +59,10 @@ API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHu
 
 **The loop, end to end:**
 
-1. **Create the agent in ChatSee** (portal: **Settings → Add agent**, type *interaction* +
-   *custom*). That gives it its IDs. The skills can't create agents.
+1. **Create the agent in ChatSee.** Ask your coding agent (*"create a ChatSee agent called
+   Support Bot"*), which calls `create_agent` (Admin role), or add it in the portal
+   (**Settings → Add agent**, type *interaction* + *custom*). That gives it its IDs.
+   `telemetry-setup` also offers to create it when your agent isn't in ChatSee yet.
 2. **`telemetry-setup`** adds the official `chatsee-ai` SDK to your agent's code. It gets the
    agent's `agent_id`, `tenant_id` and environment from your account via `list_my_agents` (no
    key), installs the SDK, writes them to the project's `.env` (and checks `.env` is
