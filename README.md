@@ -20,7 +20,7 @@ then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini
 
 ---
 
-> **Branch `chatsee-qa`: the ChatSee QA environment.** The MCP is `https://qa.chatsee.ai/mcp/`
+> **Branch `chatsee-demo`: the ChatSee demo environment.** The MCP is `https://gcp-demo.chatsee.ai/mcp/`
 > and you **sign in with your ChatSee account**; there is no ChatSee API key to set (your coding agent
 > still needs its own sign-in or API key, as usual). `main` still targets
 > gcp-demo with an MCP key until the sign-in release.
@@ -66,7 +66,7 @@ API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHu
    key), installs the SDK, writes them to the project's `.env` (and checks `.env` is
    gitignored), and wraps your agent's conversation loop so each turn (user message, tool calls,
    answer, errors) is sent to ChatSee. You review the change, then run your agent as normal.
-   PII redaction is left off on dev and QA, which don't serve it yet.
+   PII redaction is left off on dev, QA and demo, which don't serve it yet.
 3. **ChatSee analyses the conversations** (errors, clusters, suggested fixes). This takes from a
    few minutes to about 90 minutes.
 4. **`guardian-query`** asks the Guardian, in plain English, what's going wrong: top error codes,
@@ -96,7 +96,7 @@ sets for you.
 
 Before installing, make sure you have:
 
-- **A ChatSee account on QA**: you can log in at <https://qa.chatsee.ai>. The editor
+- **A ChatSee account on demo**: you can log in at <https://gcp-demo.chatsee.ai>. The editor
   sees only the agents that account can see.
 - **Python 3.9+**: the skills carry their own scripts; skills 2/3/4 need **no third-party packages**.
 - **The `chatsee-ai` SDK**: only needed for `telemetry-setup` (skill 1):
@@ -157,7 +157,7 @@ codex mcp login chatsee  # opens the browser to sign in with ChatSee
 
 Open a Codex session; the skills and the `chatsee` MCP tools load automatically.
 
-> **Windows 10:** Codex uses Windows' own TLS, which has no TLS 1.3. The QA server must also
+> **Windows 10:** Codex uses Windows' own TLS, which has no TLS 1.3. The ChatSee server must also
 > accept TLS 1.2, or Codex can't connect at all.
 
 ### 🔵 Gemini CLI
@@ -217,7 +217,7 @@ the repo does:
 cp -R /path/to/ChatSee-Skills/.github/skills  <your-repo>/.github/skills
 ```
 
-An administrator then adds the MCP server (`https://qa.chatsee.ai/mcp/`) under
+An administrator then adds the MCP server (`https://gcp-demo.chatsee.ai/mcp/`) under
 **Settings → Copilot → MCP servers**. There is no one-click bundle for Copilot; this half is
 configured in GitHub, not from a file.
 
