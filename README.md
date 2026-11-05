@@ -20,7 +20,7 @@ then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini
 
 ---
 
-> **Branch `chatsee-demo`: the ChatSee demo environment.** The MCP is `https://gcp-demo.chatsee.ai/mcp/`
+> **Branch `chatsee-prod`: ChatSee production.** The MCP is `https://app.chatsee.ai/mcp/`
 > and you **sign in with your ChatSee account**; there is no ChatSee API key to set (your coding agent
 > still needs its own sign-in or API key, as usual). `main` still targets
 > gcp-demo with an MCP key until the sign-in release.
@@ -66,7 +66,7 @@ API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHu
    key), installs the SDK, writes them to the project's `.env` (and checks `.env` is
    gitignored), and wraps your agent's conversation loop so each turn (user message, tool calls,
    answer, errors) is sent to ChatSee. You review the change, then run your agent as normal.
-   PII redaction is left off on dev, QA and demo, which don't serve it yet.
+   PII redaction is left off for now: no ChatSee environment serves it to the SDK yet.
 3. **ChatSee analyses the conversations** (errors, clusters, suggested fixes). This takes from a
    few minutes to about 90 minutes.
 4. **`guardian-query`** asks the Guardian, in plain English, what's going wrong: top error codes,
@@ -96,7 +96,7 @@ sets for you.
 
 Before installing, make sure you have:
 
-- **A ChatSee account on demo**: you can log in at <https://gcp-demo.chatsee.ai>. The editor
+- **A ChatSee account**: you can log in at <https://app.chatsee.ai>. The editor
   sees only the agents that account can see.
 - **Python 3.9+**: the skills carry their own scripts; skills 2/3/4 need **no third-party packages**.
 - **The `chatsee-ai` SDK**: only needed for `telemetry-setup` (skill 1):
@@ -106,12 +106,12 @@ Before installing, make sure you have:
 - **Access to this GitHub repository.** It is private for now, so your GitHub account must be in
   the ChatSee organization, and `git` must be signed in to GitHub. Check with:
   ```bash
-  git ls-remote https://github.com/ChatSee/Chatsee-Skills chatsee-demo
+  git ls-remote https://github.com/ChatSee/Chatsee-Skills chatsee-prod
   ```
-  One line ending in `refs/heads/chatsee-demo` means you're ready. Claude Code, Codex and Gemini
+  One line ending in `refs/heads/chatsee-prod` means you're ready. Claude Code, Codex and Gemini
   fetch the branch themselves; only Cursor and Copilot need a clone:
   ```bash
-  git clone -b chatsee-demo https://github.com/ChatSee/Chatsee-Skills.git
+  git clone -b chatsee-prod https://github.com/ChatSee/Chatsee-Skills.git
   ```
 
 **Signing in:** the first time the editor uses the `chatsee` MCP, it opens your browser at
@@ -127,13 +127,13 @@ remove access any time by clearing the editor's authentication for `chatsee`.
 Run these **in your terminal**:
 
 ```bash
-claude plugin marketplace add "ChatSee/Chatsee-Skills#chatsee-demo"
+claude plugin marketplace add "ChatSee/Chatsee-Skills#chatsee-prod"
 claude plugin install chatsee-skills@chatsee
 ```
 
-(`#chatsee-demo` selects this branch. Inside the Claude Code CLI the same commands work as
+(`#chatsee-prod` selects this branch. Inside the Claude Code CLI the same commands work as
 `/plugin marketplace add …`; in the **VS Code** extension, use `/plugins` → **Marketplaces** →
-add `ChatSee/Chatsee-Skills#chatsee-demo`, then **Plugins** → install **chatsee-skills**.)
+add `ChatSee/Chatsee-Skills#chatsee-prod`, then **Plugins** → install **chatsee-skills**.)
 
 Start `claude` (or reopen the VS Code panel), then sign in: `/mcp` → **chatsee** →
 **Authenticate**. `/mcp` should show `chatsee ✔ connected`, and *"list my ChatSee agents"*
@@ -149,7 +149,7 @@ should list your agents.
 Run these **in your terminal** (Codex **v0.117+**):
 
 ```bash
-codex plugin marketplace add ChatSee/Chatsee-Skills@chatsee-demo
+codex plugin marketplace add ChatSee/Chatsee-Skills@chatsee-prod
 codex plugin add chatsee-skills@chatsee
 codex plugin list        # should show chatsee-skills — installed, enabled
 codex mcp login chatsee  # opens the browser to sign in with ChatSee
@@ -168,7 +168,7 @@ While the repository is private, install from a clone. Gemini's own `git clone` 
 your saved GitHub login, so it can't fetch a private repo itself:
 
 ```bash
-git clone -b chatsee-demo https://github.com/ChatSee/Chatsee-Skills.git
+git clone -b chatsee-prod https://github.com/ChatSee/Chatsee-Skills.git
 gemini extensions install ./Chatsee-Skills --consent
 gemini extensions list      # should show 1 MCP server and 4 agent skills
 ```
@@ -177,7 +177,7 @@ Once the repository is public, this one command replaces the three above (answer
 it offers to `git clone` after looking for a release):
 
 ```bash
-gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatsee-demo --consent
+gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatsee-prod --consent
 ```
 
 Then sign in from inside Gemini: `/mcp auth chatsee`. Confirm with `/mcp`; you want
@@ -189,7 +189,7 @@ These editors have no plugin installer, so the repository includes one. In a ter
 PowerShell or a macOS/Linux shell), go to **your own project folder** and run:
 
 ```bash
-git clone -b chatsee-demo https://github.com/ChatSee/Chatsee-Skills.git
+git clone -b chatsee-prod https://github.com/ChatSee/Chatsee-Skills.git
 python Chatsee-Skills/install.py copilot      # or: python Chatsee-Skills/install.py cursor
 ```
 
@@ -217,7 +217,7 @@ the repo does:
 cp -R /path/to/ChatSee-Skills/.github/skills  <your-repo>/.github/skills
 ```
 
-An administrator then adds the MCP server (`https://gcp-demo.chatsee.ai/mcp/`) under
+An administrator then adds the MCP server (`https://app.chatsee.ai/mcp/`) under
 **Settings → Copilot → MCP servers**. There is no one-click bundle for Copilot; this half is
 configured in GitHub, not from a file.
 
@@ -226,7 +226,7 @@ plus the `chatsee` MCP server. It can't pick a branch from GitHub, so add the ma
 clone of this branch (pass the clone's full path: a relative path is read as a GitHub repo name):
 
 ```bash
-git clone -b chatsee-demo https://github.com/ChatSee/Chatsee-Skills.git
+git clone -b chatsee-prod https://github.com/ChatSee/Chatsee-Skills.git
 copilot plugin marketplace add "$PWD/Chatsee-Skills"   # a FULL path; Windows cmd: "%CD%\Chatsee-Skills"
 copilot plugin install chatsee-skills@chatsee     # "Installed 4 skills"
 copilot mcp list                                  # Plugin servers: chatsee (http)
@@ -273,13 +273,13 @@ Gemini gets its own directory rather than sharing the repo root: sharing it mean
 discovered Claude Code's `hooks/hooks.json` and ran it with `${CLAUDE_PLUGIN_ROOT}` never
 expanded, so every session opened with a failed SessionStart hook. The sign-in build (this
 branch) has no hooks, so it also writes `gemini-extension.json` and `GEMINI.md` at the root,
-which is what lets `gemini extensions install <repo> --ref chatsee-demo` work.
+which is what lets `gemini extensions install <repo> --ref chatsee-prod` work.
 
 ---
 
 ## 🚀 Startup check
 
-> **Off on the `chatsee-demo` branch.** The startup script calls the Guardian with an MCP key,
+> **Off on the `chatsee-prod` branch.** The startup script calls the Guardian with an MCP key,
 > and this branch signs in instead, so no session-start hook is installed. Ask in the session
 > instead (*"what's my agent breaking?"*). The script below still works if you set a key yourself.
 

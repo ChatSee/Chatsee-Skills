@@ -2,7 +2,7 @@
   "servers": {
     "chatsee": {
       "type": "http",
-      "url": "https://gcp-demo.chatsee.ai/mcp/"
+      "url": "https://app.chatsee.ai/mcp/"
     }
   }
 }
