@@ -1,22 +1,36 @@
 # ChatSee skills for Codex
 
 This is the **Codex wrapper** for the ChatSee skills — the counterpart to the Claude Code
-`.claude/skills/` package. It gives Codex the **same 4 skills** over the **same ChatSee MCP**
-(`ask_guardian`, `get_remediations`, `apply_remediations`). Install the wrapper for your agent;
-the capability is identical, only the format differs per coding agent.
+`.claude/skills/` package. It gives Codex the **same 5 skills** over the **same ChatSee MCP**
+(`list_my_agents`, `create_agent`, `ask_guardian`, `get_remediations`, `apply_remediations`).
+Install the wrapper for your agent; the capability is identical, only the format differs per
+coding agent. (The Codex plugin, `.codex-plugin/plugin.json`, loads the full skills from
+`skills/` directly; this file is the short version for repos that use `AGENTS.md` only.)
 
 ```
-▶ 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → 2 apply → 3 code fix
+▶ 0 account → 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → 2 apply → 3 code fix
 ```
 
-**Config (from `.env`, never hardcode keys):**
-- `CHATSEE_MCP_URL` — MCP endpoint (e.g. `https://gcp-demo.chatsee.ai/mcp/`) — used by skills 2/3/4
-- `CHATSEE_MCP_KEY` — `cs-live-…` key, bound to one agent — used by skills 2/3/4
-- `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`, `CHATSEE_ENV` (`dev|qa|demo|poc`) — used by skill 1
-- The agent identity is resolved automatically from the MCP key — **never ask the user for a
-  tenant id or agent id when using the MCP tools.**
+**Connecting:** the developer signs in with their own ChatSee account — no API key:
+`codex mcp login <server name>`, then restart Codex. The tools then see only the agents that
+person may reach. **Never ask the user for a tenant id or agent id**: call `list_my_agents`.
+(Older setups used a `cs-live-…` key in `CHATSEE_MCP_KEY`; that still works where configured.)
 
 ---
+
+## Skill 0 — chatsee-account  ("create a ChatSee account / tenant / organisation")
+For developers with **no ChatSee account yet**. Nothing is created by you: they fill in
+ChatSee's sign-up page in the browser.
+1. Call `list_my_agents`. If it works, they already have an organisation — tell them and stop.
+2. Open the sign-up page: the ChatSee MCP URL's host + `/connect/signup`
+   (`https://dev-react.chatsee.ai/mcp/` → `https://dev-react.chatsee.ai/connect/signup`) with
+   `python -m webbrowser "<page>"`, and **always print the link** too. They enter name, work
+   email, organisation, password and the emailed 6-digit code, and land on **"Your ChatSee
+   account is ready"**. They keep that tab open. Never ask for or type their details yourself.
+3. Ask them to run `codex mcp login <server name>` and restart Codex. The browser is already
+   signed in, so they click **Continue**, then **Allow**.
+4. Call `list_my_agents` again (a new organisation has 0 agents), then offer `create_agent`
+   or skill 1.
 
 ## Skill 1 — telemetry-setup  ("set up ChatSee telemetry / monitoring")
 Instrument the developer's **agent code** so each real user turn streams to ChatSee. This edits
@@ -37,7 +51,8 @@ the agent's own source — the subject is its **real end-user conversations**, n
    ```
    Auth is the `agent_id` + `tenant_id` themselves — no key for telemetry; it fails **open**
    (if ChatSee is unreachable the agent keeps serving users).
-4. **Ensure `.env` is gitignored** — onboarding drops a `.env` with a live MCP key; add it to
+   Get `agent_id` / `tenant_id` from `list_my_agents` (or `create_agent` for a new agent).
+4. **Ensure `.env` is gitignored** — if the agent keeps ids or keys in `.env`, add it to
    `.gitignore` if missing.
 
 ## Skill 2 — remediation  ("pull / apply the fixes")
