@@ -31,7 +31,7 @@ Four skills, one MCP, one loop — **observe → ask what's wrong → fix the pr
 
 | Skill | What it does |
 |-------|--------------|
-| 🆕 **`chatsee-account`** | No ChatSee account yet? Sign up (new organisation, Free plan) and connect the editor in one sign-in. |
+| 🆕 **`chatsee-account`** | No ChatSee account yet? Opens the ChatSee sign-up page (new organisation, Free plan), then connects the editor to it. |
 | 🛰️ **`telemetry-setup`** | Instrument your agent so each turn streams to the Guardian. |
 | 🩹 **`remediation`** | Show remediations with their ChatSee status, approve the waiting ones, apply the Implemented ones. |
 | 🛠️ **`structural-correction`** | Diagnose deeper *code* bugs and propose fixes. |
@@ -55,8 +55,8 @@ skill.
 
 **Signing in.** The first time the editor uses ChatSee, your browser opens on ChatSee: sign in,
 click **Continue**, then **Allow**. No account yet? Ask *"create a ChatSee account"*
-(`chatsee-account`): the same sign-in then opens the sign-up page instead, and the editor is
-connected to the new organisation when you click **Allow**. The editor sees only the agents your ChatSee account can see.
+(`chatsee-account`): it opens the ChatSee sign-up page; once the account is ready, sign in from
+the editor as above (you're already signed in, so just **Continue** and **Allow**). The editor sees only the agents your ChatSee account can see.
 This replaces the ChatSee API key only: your coding agent itself still needs its own sign-in or
 API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHub Copilot access).
 
