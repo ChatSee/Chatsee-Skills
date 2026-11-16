@@ -61,21 +61,33 @@ def ensure_gitignored() -> bool:
     return True
 
 
+def _mcp_json_candidates() -> list[Path]:
+    """The project's .mcp.json first, then the one shipped with this skill's plugin.
+
+    Installed as a plugin (Claude Code, Codex), the project has no .mcp.json: the ChatSee
+    server comes from the plugin's own, a few folders above this script.
+    """
+    out = [Path(".mcp.json")]
+    here = Path(__file__).resolve()
+    out += [p / ".mcp.json" for p in list(here.parents)[2:6]]
+    return out
+
+
 def api_from_mcp_json() -> str | None:
-    f = Path(".mcp.json")
-    if not f.exists():
-        return None
-    try:
-        servers = json.loads(f.read_text(encoding="utf-8")).get("mcpServers", {})
-    except ValueError:
-        return None
-    for name, cfg in servers.items():
-        url = (cfg or {}).get("url", "")
-        if "chatsee" in name.lower() or "chatsee" in url:
-            parts = urlsplit(url)
-            if parts.netloc in LOCAL_MCP_TO_API:
-                return LOCAL_MCP_TO_API[parts.netloc]
-            return f"{parts.scheme}://{parts.netloc}/api"
+    for f in _mcp_json_candidates():
+        if not f.exists():
+            continue
+        try:
+            servers = json.loads(f.read_text(encoding="utf-8")).get("mcpServers", {})
+        except ValueError:
+            continue
+        for name, cfg in servers.items():
+            url = (cfg or {}).get("url", "")
+            if "chatsee" in name.lower() or "chatsee" in url:
+                parts = urlsplit(url)
+                if parts.netloc in LOCAL_MCP_TO_API:
+                    return LOCAL_MCP_TO_API[parts.netloc]
+                return f"{parts.scheme}://{parts.netloc}/api"
     return None
 
 
