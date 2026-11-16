@@ -63,10 +63,11 @@ and no sign-up form, it:
 2. creates the organisation (Free plan) and an agent, and writes `CHATSEE_AGENT_ID`,
    `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY` and `CHATSEE_API_URL` to `.env`
    (and makes sure `.env` is gitignored);
-3. wires your bot's telemetry (`telemetry-setup`) and confirms ChatSee is receiving it;
+3. asks before editing your code, then wires your bot's telemetry (`telemetry-setup`) and
+   confirms ChatSee is receiving it;
 4. gives you a **claim link** (valid 72 hours). Open it, enter your work email and the 6-digit
-   code ChatSee sends, and the organisation is yours. No password is needed (set one later with
-   *Forgot password*). Unclaimed organisations are deleted after 72 hours.
+   code ChatSee sends, and choose a password: the organisation is yours, and that email and
+   password sign you in to the ChatSee portal. Unclaimed organisations are deleted after 72 hours.
 
 Until it's claimed, the organisation can only **receive** conversations: nobody can read them.
 After claiming, sign in from the editor as above (you're already signed in, so just **Continue**

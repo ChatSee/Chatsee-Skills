@@ -8,7 +8,7 @@ description: Set up ChatSee for a developer who has no ChatSee account, entirely
 The developer gets a ChatSee organisation on the Free plan and an agent, and their bot
 starts streaming conversations to it, **without leaving the editor and without a sign-up
 form**. ChatSee creates the organisation with no owner; the developer claims it later with
-a link (email + 6-digit code, about 30 seconds). This is how Raindrop and Axiom onboard
+a link (work email, a password and the 6-digit code, about 30 seconds). This is how Raindrop and Axiom onboard
 from coding agents.
 
 Until it is claimed the organisation can only **receive** conversations. Nobody can read
@@ -49,11 +49,15 @@ makes sure `.env` is gitignored, and prints the **claim link**. It never prints 
 
 On HTTP 429 it says how long to wait: wait once and retry once, never loop.
 
-**Never ask for, or type, a password or email in the chat.** None is needed here.
+**Never ask for, or type, a password or email in the chat.** None is needed here; the
+developer chooses their password on ChatSee's claim page.
 
-## 3. Stream the bot's conversations
-Follow skill 1 (**telemetry-setup**) to add the four ChatSee SDK calls to the developer's
-bot. The ids are already in `.env`, so skill 1 uses them and doesn't need a sign-in.
+## 3. Stream the bot's conversations (ask first)
+This edits the developer's own code, so **ask before touching it**, even straight after
+step 2: name the file you would change, for example *"Shall I add ChatSee monitoring to
+returns-bot/agent.py?"*, and wait for a yes. On no, stop here and just give the claim link
+(step 5). On yes, follow skill 1 (**telemetry-setup**) to add the four ChatSee SDK calls to
+the developer's bot. The ids are already in `.env`, so skill 1 uses them and doesn't need a sign-in.
 As skill 1 says: offer to run the bot, don't just run it (it calls their model and tools).
 
 If the developer has no bot yet, skill 1's reference agent works as a first one.
@@ -74,13 +78,15 @@ Show the claim link **in the chat only** (never write it to a file, commit or lo
 opens it first and confirms an email owns the organisation. Tell the developer:
 
 > "ChatSee is receiving your bot's conversations. Open this link within 3 days to claim
-> your organisation: enter your work email and the code we send. Then you can see what
+> your organisation: enter your work email, choose a password and enter the code we send.
+> Then you can see what
 > ChatSee finds."
 
 ## 6. After they claim
 Reading data needs the developer's own sign-in, once:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate** → **Continue** → **Allow**
-  (the claim already signed the browser in, so no password).
+  (the claim already signed the browser in, so no password prompt).
+- The ChatSee portal: sign in with the email and password chosen when claiming.
 - Gemini CLI: `/mcp auth chatsee` · Codex: `codex mcp login <server name>`, then restart ·
   Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**.
 

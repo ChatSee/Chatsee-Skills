@@ -30,10 +30,12 @@ For developers with **no ChatSee account yet**. Creates the organisation and age
    `python skills/chatsee-account/scripts/agent_signup.py signup --org "<org>" --agent "<agent>" --accept-terms`
    It writes `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY`,
    `CHATSEE_API_URL` to `.env` (gitignored) and prints the **claim link**. It never prints the key.
-4. Wire the bot's telemetry (skill 1, using the ids in `.env`), offer to run it, then
+4. **Ask before editing their code** ("Shall I add ChatSee monitoring to <file>?"). On yes, wire
+   the bot's telemetry (skill 1, using the ids in `.env`), offer to run it, then
    `python skills/chatsee-account/scripts/agent_signup.py check` → `healthy` = data arriving.
 5. Show the claim link **in the chat only** (whoever opens it first owns the organisation).
-   They enter their work email + the 6-digit code within 72 hours; no password. Until then the
+   They enter their work email, a password and the 6-digit code within 72 hours (that email
+   and password are their portal login). Until then the
    organisation only receives data — nobody can read it.
 6. After the claim: `codex mcp login <server name>`, restart Codex, then skills 2–4 work.
 
