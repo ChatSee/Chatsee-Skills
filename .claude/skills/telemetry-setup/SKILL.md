@@ -12,7 +12,12 @@ skills 2–4 can act on it.
 **Subject = the agent's real end-user conversations**, never the Claude Code session.
 
 ## First: is ChatSee connected?
-Use the ChatSee MCP tools (`list_my_agents`, `create_agent`, `ask_guardian`, `list_remediations`, `get_remediations`,
+**Set up by skill 0 (chatsee-account)?** If the project's `.env` already has
+`CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID` and `CHATSEE_ENV` (written by the agent sign-up),
+use them and go straight to the steps: sending telemetry needs only those ids, and an
+organisation that hasn't been claimed yet can't sign in anyway.
+
+Otherwise use the ChatSee MCP tools (`list_my_agents`, `create_agent`, `ask_guardian`, `list_remediations`, `get_remediations`,
 `apply_remediations`). If they are missing, or a call fails with an authentication error,
 **stop and tell the developer to sign in**, then retry:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate**

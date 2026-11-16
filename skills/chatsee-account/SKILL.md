@@ -1,62 +1,84 @@
 ---
 name: chatsee-account
-description: Create a new ChatSee account (a ChatSee organisation, also called a tenant, on the Free plan) from the editor, then connect the editor to it. Use when a developer asks to sign up for ChatSee, create a ChatSee account, organisation, workspace or tenant, or says they don't have a ChatSee account yet. Not for developers who already have an account and just need to sign in. (Skill 0, before the other four.)
+description: Set up ChatSee for a developer who has no ChatSee account, entirely from the editor - creates a ChatSee organisation (tenant) on the Free plan with an agent, wires the developer's bot to stream its conversations, confirms data is arriving, and hands over a claim link. Use when a developer asks to set up ChatSee, sign up for ChatSee, create a ChatSee account, organisation, workspace or tenant, or says they don't have a ChatSee account yet. Not for developers who already have an account and just need to sign in. (Skill 0, before the other four.)
 ---
 
-# Create a ChatSee account (skill 0)
+# Set up ChatSee with no account (skill 0)
 
-The developer gets a new ChatSee organisation (tenant) on the Free plan, then connects
-the editor to it. Nothing is created by you directly: the developer fills in ChatSee's
-sign-up page in their browser. Your job is to open that page and pick up afterwards.
+The developer gets a ChatSee organisation on the Free plan and an agent, and their bot
+starts streaming conversations to it, **without leaving the editor and without a sign-up
+form**. ChatSee creates the organisation with no owner; the developer claims it later with
+a link (email + 6-digit code, about 30 seconds). This is how Raindrop and Axiom onboard
+from coding agents.
 
-## 1. Already connected?
-Call `list_my_agents`.
-- **It works:** the editor is already signed in to a ChatSee organisation (its `tenant_id`
-  is in the answer). Tell the developer, and stop unless they want a *second*, separate
-  organisation. For that they first sign out of the current one: Claude Code `/mcp` →
-  the ChatSee server → **Clear authentication**. Then continue below.
-- **The tool is missing or fails with an authentication error:** not signed in yet. Continue.
+Until it is claimed the organisation can only **receive** conversations. Nobody can read
+them (no dashboard, no Guardian answers, no remediations) until a verified person owns it.
+Unclaimed organisations are deleted after 72 hours.
 
-## 2. Open the ChatSee sign-up page
-It is on the same site as the ChatSee MCP server: take the host from the ChatSee server
-URL in the project's `.mcp.json` (or the editor's MCP settings) and add `/connect/signup`.
+## 1. Already set up?
+- If the project's `.env` has `CHATSEE_AGENT_ID`, it is already connected: say so and stop.
+  Don't create a second organisation.
+- If the ChatSee MCP tools work (`list_my_agents` answers), the developer already has an
+  account: use it (offer `create_agent` and skill 1, telemetry-setup) and stop.
 
-| ChatSee MCP URL | Sign-up page |
-|---|---|
-| `https://dev-react.chatsee.ai/mcp/` | `https://dev-react.chatsee.ai/connect/signup` |
-| `https://qa.chatsee.ai/mcp/` | `https://qa.chatsee.ai/connect/signup` |
+## 2. Ask two things, then create it
+Ask the developer, in one message:
+- **What should the organisation be called?** (suggest their company or project name)
+- **Do you accept ChatSee's [Terms of Service](https://www.chatsee.ai/terms-of-service) and
+  [Privacy Policy](https://www.chatsee.ai/privacy-policy)?** Only continue on a clear yes.
+
+Name the agent after their bot or repo (for example "Returns Bot"); mention the name you chose.
+From the project root, run:
 
 ```bash
-python -m webbrowser "<sign-up page>"
+python <this skill>/scripts/agent_signup.py signup --org "<organisation>" --agent "<agent name>" --accept-terms
 ```
-If that fails, use `start "" "<page>"` (Windows), `open "<page>"` (macOS) or
-`xdg-open "<page>"` (Linux). **Always also print the link**, so the developer can open it
-themselves.
 
-Tell them what happens there: name, work email, organisation and password → a 6-digit
-code by email → **Create account and continue**. The page then says **"Your ChatSee
-account is ready"**. They should keep that tab open and come back here.
+It picks the ChatSee address from the ChatSee server in `.mcp.json` (pass
+`--api https://<host>/api` if there is none). It writes `CHATSEE_AGENT_ID`,
+`CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY` and `CHATSEE_API_URL` to `.env`,
+makes sure `.env` is gitignored, and prints the **claim link**. It never prints the setup key.
 
-Don't ask for, or type, their name, email or password anywhere. They enter those on the
-ChatSee page.
+On HTTP 429 it says how long to wait: wait once and retry once, never loop.
 
-## 3. Connect the editor
-When they say the account is ready, ask them to sign in from the editor. Only the
-developer can start this:
-- Claude Code: `/mcp` → the ChatSee server → **Authenticate**
-- Gemini CLI: `/mcp auth chatsee`
-- Codex: `codex mcp login <server name>`, then restart Codex
-- Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**
+**Never ask for, or type, a password or email in the chat.** None is needed here.
 
-The browser already has them signed in, so they only click **Continue**, then **Allow**.
-If it asks for a password instead (for example the sign-up tab was closed), they sign in
-with the email and password they just chose.
+## 3. Stream the bot's conversations
+Follow skill 1 (**telemetry-setup**) to add the four ChatSee SDK calls to the developer's
+bot. The ids are already in `.env`, so skill 1 uses them and doesn't need a sign-in.
+As skill 1 says: offer to run the bot, don't just run it (it calls their model and tools).
 
-## 4. Confirm and carry on
-Call `list_my_agents` again. A new organisation has **0 agents** and a `tenant_id`. Tell
-them it worked, then offer the next step:
-- create their first agent (`create_agent`), or
-- instrument an existing agent so its conversations reach ChatSee (skill 1, telemetry-setup).
+If the developer has no bot yet, skill 1's reference agent works as a first one.
 
-**Never search for API keys, `.env` files or credentials to get around a missing sign-in**,
-and never read files outside the project.
+## 4. Confirm data is arriving
+After the bot has handled at least one conversation, wait about 30 seconds and run:
+
+```bash
+python <this skill>/scripts/agent_signup.py check
+```
+
+`status: healthy` with a count means ChatSee is receiving it (exit 0). `no_events` (exit 2)
+means nothing has arrived yet: check the bot actually ran and that `.env` is loaded by it.
+The check shows counts only, never conversation content.
+
+## 5. Hand over the claim link
+Show the claim link **in the chat only** (never write it to a file, commit or log): whoever
+opens it first and confirms an email owns the organisation. Tell the developer:
+
+> "ChatSee is receiving your bot's conversations. Open this link within 3 days to claim
+> your organisation: enter your work email and the code we send. Then you can see what
+> ChatSee finds."
+
+## 6. After they claim
+Reading data needs the developer's own sign-in, once:
+- Claude Code: `/mcp` → the ChatSee server → **Authenticate** → **Continue** → **Allow**
+  (the claim already signed the browser in, so no password).
+- Gemini CLI: `/mcp auth chatsee` · Codex: `codex mcp login <server name>`, then restart ·
+  Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**.
+
+Then skills 2-4 work: ask the Guardian (guardian-query), review fixes (remediation), code
+fixes (structural-correction). Failures appear a few minutes to about an hour after the
+conversations, so "no errors yet" right after setup is normal.
+
+**Never search for API keys, credentials or other `.env` files to get around a missing
+sign-in,** and never read files outside the project.
