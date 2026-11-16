@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "chatsee": {
+      "serverUrl": "https://dev-react.chatsee.ai/mcp/"
+    }
+  }
+}

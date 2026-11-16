@@ -14,6 +14,9 @@ Who reads what
   Claude Code (project) .claude/skills/                                    MIRROR
   Cursor      (project) .cursor/skills/                                    MIRROR
   Copilot     (repo)    .github/skills/ + .github/mcp.json                 MIRROR
+  Antigravity (project) .agents/skills/ + .agents/mcp_config.json          MIRROR
+  Devin       (project) .agents/skills/ (+ its own MCP setting)            same mirror
+  OpenCode    (project) .claude/skills/ + opencode.json                    reuses the Claude mirror
 
 Gemini gets its own directory rather than sharing the repo root. Sharing it meant Gemini
 discovered Claude Code's `hooks/hooks.json` and ran it with `${CLAUDE_PLUGIN_ROOT}` never
@@ -70,7 +73,7 @@ DESCRIPTION = (
 )
 
 # Hosts that will only read skills from a fixed path, so they get a copy of `skills/`.
-MIRRORS = (".claude/skills", ".cursor/skills", "platforms/gemini/skills", ".github/skills")
+MIRRORS = (".claude/skills", ".cursor/skills", "platforms/gemini/skills", ".github/skills", ".agents/skills")
 
 STARTUP_SCRIPT = "skills/guardian-query/scripts/startup_check.py"
 
@@ -158,10 +161,9 @@ def build_claude(target: Path) -> None:
 
 # The startup hook reads CHATSEE_MCP_KEY and has nothing to do after an OAuth sign-in (a
 # hook cannot use the editor's MCP connection), so OAuth builds ship it switched off.
-OAUTH_NO_HOOK = {
-    "description": "No session-start hook: it needs an API key, and this build signs in with ChatSee.",
-    "hooks": {},
-}
+# No top-level "description" here: Antigravity's `agy plugin install` stages this file as the
+# plugin's hooks.json and its parser rejects a string "description" ("failed to parse hooks").
+OAUTH_NO_HOOK = {"hooks": {}}
 
 
 def build_codex(target: Path) -> None:
@@ -344,7 +346,29 @@ def cursor_deeplink() -> str:
     )
 
 
-BUILDERS = (build_claude, build_codex, build_gemini, build_cursor, build_copilot)
+def build_antigravity(target: Path) -> None:
+    """Google Antigravity (IDE and `agy` CLI): workspace skills and MCP under `.agents/`.
+
+    Antigravity discovers `.agents/skills/` and `.agents/mcp_config.json` from the workspace
+    root (verified with agy 1.5.6: it connected to the server named there). Its docs call the
+    key `url` and accept the older `serverUrl`; `serverUrl` works in both old and new builds.
+    Devin reads the same `.agents/skills/`, so this mirror serves it too.
+    The other route, `agy plugin install <clone>`, imports the Gemini extension instead.
+    """
+    write_json(".agents/mcp_config.json", {"mcpServers": {SERVER_NAME: {"serverUrl": MCP_URL}}}, target)
+
+
+def build_opencode(target: Path) -> None:
+    """OpenCode: `opencode.json` at the project root; skills come from `.claude/skills/`.
+
+    OpenCode v2 (`@opencode/cli`) nests servers under `mcp.servers`; the v1 shape
+    (`"mcp": {"chatsee": …}`) is silently ignored by v2 ("No MCP servers configured").
+    This is the shape `opencode mcp add` itself writes. Sign-in: `opencode mcp auth chatsee`.
+    """
+    write_json("opencode.json", {"mcp": {"servers": {SERVER_NAME: {"type": "remote", "url": MCP_URL}}}}, target)
+
+
+BUILDERS = (build_claude, build_codex, build_gemini, build_cursor, build_copilot, build_antigravity, build_opencode)
 
 
 def build(target: Path) -> None:
@@ -389,6 +413,8 @@ def check() -> int:
             ".cursor/hooks.json",
             ".github/mcp.json",
             ".vscode/mcp.json",
+            ".agents/mcp_config.json",
+            "opencode.json",
             *(("gemini-extension.json", "GEMINI.md") if AUTH_MODE == "oauth" else ()),
         ):
             live = ROOT / rel

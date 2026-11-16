@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "servers": {
+      "chatsee": {
+        "type": "remote",
+        "url": "https://dev-react.chatsee.ai/mcp/"
+      }
+    }
+  }
+}
