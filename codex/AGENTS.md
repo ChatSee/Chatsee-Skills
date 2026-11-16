@@ -18,19 +18,24 @@ person may reach. **Never ask the user for a tenant id or agent id**: call `list
 
 ---
 
-## Skill 0 — chatsee-account  ("create a ChatSee account / tenant / organisation")
-For developers with **no ChatSee account yet**. Nothing is created by you: they fill in
-ChatSee's sign-up page in the browser.
-1. Call `list_my_agents`. If it works, they already have an organisation — tell them and stop.
-2. Open the sign-up page: the ChatSee MCP URL's host + `/connect/signup`
-   (`https://dev-react.chatsee.ai/mcp/` → `https://dev-react.chatsee.ai/connect/signup`) with
-   `python -m webbrowser "<page>"`, and **always print the link** too. They enter name, work
-   email, organisation, password and the emailed 6-digit code, and land on **"Your ChatSee
-   account is ready"**. They keep that tab open. Never ask for or type their details yourself.
-3. Ask them to run `codex mcp login <server name>` and restart Codex. The browser is already
-   signed in, so they click **Continue**, then **Allow**.
-4. Call `list_my_agents` again (a new organisation has 0 agents), then offer `create_agent`
-   or skill 1.
+## Skill 0 — chatsee-account  ("set up ChatSee" / "create a ChatSee account / tenant")
+For developers with **no ChatSee account yet**. Creates the organisation and agent from here,
+**with no browser and no sign-up form**; the developer claims it later with a link.
+1. If `.env` already has `CHATSEE_AGENT_ID`, or `list_my_agents` works, they're set up: say so, stop.
+2. **Always ask, as its own question, and wait:** "Do you accept ChatSee's
+   [Terms of Service](https://www.chatsee.ai/terms-of-service) and
+   [Privacy Policy](https://www.chatsee.ai/privacy-policy)? (yes / no)". Asking for an account
+   or naming the organisation is not acceptance. Also ask for the organisation name if missing.
+3. Only on yes, from the project root:
+   `python skills/chatsee-account/scripts/agent_signup.py signup --org "<org>" --agent "<agent>" --accept-terms`
+   It writes `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY`,
+   `CHATSEE_API_URL` to `.env` (gitignored) and prints the **claim link**. It never prints the key.
+4. Wire the bot's telemetry (skill 1, using the ids in `.env`), offer to run it, then
+   `python skills/chatsee-account/scripts/agent_signup.py check` → `healthy` = data arriving.
+5. Show the claim link **in the chat only** (whoever opens it first owns the organisation).
+   They enter their work email + the 6-digit code within 72 hours; no password. Until then the
+   organisation only receives data — nobody can read it.
+6. After the claim: `codex mcp login <server name>`, restart Codex, then skills 2–4 work.
 
 ## Skill 1 — telemetry-setup  ("set up ChatSee telemetry / monitoring")
 Instrument the developer's **agent code** so each real user turn streams to ChatSee. This edits
