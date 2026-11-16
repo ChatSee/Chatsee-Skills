@@ -21,11 +21,19 @@ Unclaimed organisations are deleted after 72 hours.
 - If the ChatSee MCP tools work (`list_my_agents` answers), the developer already has an
   account: use it (offer `create_agent` and skill 1, telemetry-setup) and stop.
 
-## 2. Ask two things, then create it
-Ask the developer, in one message:
-- **What should the organisation be called?** (suggest their company or project name)
-- **Do you accept ChatSee's [Terms of Service](https://www.chatsee.ai/terms-of-service) and
-  [Privacy Policy](https://www.chatsee.ai/privacy-policy)?** Only continue on a clear yes.
+## 2. Ask for the terms (always), then create it
+**Always ask this as its own question and wait for the answer, even when the developer has
+already given a name or said "set up ChatSee":**
+
+> Before I create it: do you accept ChatSee's
+> [Terms of Service](https://www.chatsee.ai/terms-of-service) and
+> [Privacy Policy](https://www.chatsee.ai/privacy-policy)? (yes / no)
+
+- Asking for a ChatSee account, naming the organisation, or saying "go ahead" is **not**
+  acceptance. Only an explicit yes to *this* question is. Never assume it, never answer it
+  for them, and never pass `--accept-terms` without it. On no, stop: nothing is created.
+- If they haven't named the organisation, ask for that too (suggest their company or
+  project name). It can go in the same message as the terms question.
 
 Name the agent after their bot or repo (for example "Returns Bot"); mention the name you chose.
 From the project root, run:

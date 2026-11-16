@@ -160,7 +160,9 @@ def main() -> int:
     s = sub.add_parser("signup")
     s.add_argument("--org", required=True)
     s.add_argument("--agent", default="My agent")
-    s.add_argument("--accept-terms", action="store_true")
+    # Only after the developer answered yes to the terms question (SKILL.md step 2), never assumed.
+    s.add_argument("--accept-terms", action="store_true",
+                   help="the developer explicitly said yes to ChatSee's Terms of Service and Privacy Policy")
     s.add_argument("--source", default="claude-code")
     s.add_argument("--api")
     c = sub.add_parser("check")
