@@ -1,22 +1,41 @@
 # ChatSee skills for Codex
 
 This is the **Codex wrapper** for the ChatSee skills — the counterpart to the Claude Code
-`.claude/skills/` package. It gives Codex the **same 4 skills** over the **same ChatSee MCP**
-(`ask_guardian`, `get_remediations`, `apply_remediations`). Install the wrapper for your agent;
-the capability is identical, only the format differs per coding agent.
+`.claude/skills/` package. It gives Codex the **same 5 skills** over the **same ChatSee MCP**
+(`list_my_agents`, `create_agent`, `ask_guardian`, `get_remediations`, `apply_remediations`).
+Install the wrapper for your agent; the capability is identical, only the format differs per
+coding agent. (The Codex plugin, `.codex-plugin/plugin.json`, loads the full skills from
+`skills/` directly; this file is the short version for repos that use `AGENTS.md` only.)
 
 ```
-▶ 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → 2 apply → 3 code fix
+▶ 0 account → 1 telemetry → [ChatSee classifies] → 4 ask → [a human approves] → 2 apply → 3 code fix
 ```
 
-**Config (from `.env`, never hardcode keys):**
-- `CHATSEE_MCP_URL` — MCP endpoint (e.g. `https://gcp-demo.chatsee.ai/mcp/`) — used by skills 2/3/4
-- `CHATSEE_MCP_KEY` — `cs-live-…` key, bound to one agent — used by skills 2/3/4
-- `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`, `CHATSEE_ENV` (`dev|qa|demo|poc`) — used by skill 1
-- The agent identity is resolved automatically from the MCP key — **never ask the user for a
-  tenant id or agent id when using the MCP tools.**
+**Connecting:** the developer signs in with their own ChatSee account — no API key:
+`codex mcp login <server name>`, then restart Codex. The tools then see only the agents that
+person may reach. **Never ask the user for a tenant id or agent id**: call `list_my_agents`.
+(Older setups used a `cs-live-…` key in `CHATSEE_MCP_KEY`; that still works where configured.)
 
 ---
+
+## Skill 0 — chatsee-account  ("set up ChatSee" / "create a ChatSee account / tenant")
+For developers with **no ChatSee account yet**. Creates the organisation and agent from here,
+**with no browser and no sign-up form**; the developer claims it later with a link.
+1. If `.env` already has `CHATSEE_AGENT_ID`, or `list_my_agents` works, they're set up: say so, stop.
+2. **Always ask, as its own question, and wait:** "Do you accept ChatSee's
+   [Terms of Service](https://www.chatsee.ai/terms-of-service) and
+   [Privacy Policy](https://www.chatsee.ai/privacy-policy)? (yes / no)". Asking for an account
+   or naming the organisation is not acceptance. Also ask for the organisation name if missing.
+3. Only on yes, from the project root:
+   `python skills/chatsee-account/scripts/agent_signup.py signup --org "<org>" --agent "<agent>" --accept-terms`
+   It writes `CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY`,
+   `CHATSEE_API_URL` to `.env` (gitignored) and prints the **claim link**. It never prints the key.
+4. Wire the bot's telemetry (skill 1, using the ids in `.env`), offer to run it, then
+   `python skills/chatsee-account/scripts/agent_signup.py check` → `healthy` = data arriving.
+5. Show the claim link **in the chat only** (whoever opens it first owns the organisation).
+   They enter their work email + the 6-digit code within 72 hours; no password. Until then the
+   organisation only receives data — nobody can read it.
+6. After the claim: `codex mcp login <server name>`, restart Codex, then skills 2–4 work.
 
 ## Skill 1 — telemetry-setup  ("set up ChatSee telemetry / monitoring")
 Instrument the developer's **agent code** so each real user turn streams to ChatSee. This edits
@@ -37,7 +56,8 @@ the agent's own source — the subject is its **real end-user conversations**, n
    ```
    Auth is the `agent_id` + `tenant_id` themselves — no key for telemetry; it fails **open**
    (if ChatSee is unreachable the agent keeps serving users).
-4. **Ensure `.env` is gitignored** — onboarding drops a `.env` with a live MCP key; add it to
+   Get `agent_id` / `tenant_id` from `list_my_agents` (or `create_agent` for a new agent).
+4. **Ensure `.env` is gitignored** — if the agent keeps ids or keys in `.env`, add it to
    `.gitignore` if missing.
 
 ## Skill 2 — remediation  ("pull / apply the fixes")

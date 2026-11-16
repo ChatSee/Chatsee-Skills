@@ -31,6 +31,7 @@ Four skills, one MCP, one loop — **observe → ask what's wrong → fix the pr
 
 | Skill | What it does |
 |-------|--------------|
+| 🆕 **`chatsee-account`** | No ChatSee account yet? Creates your organisation (Free plan) and agent **from the editor, with no sign-up form**, wires your bot's telemetry, confirms data is arriving, and gives you a link to claim it later. |
 | 🛰️ **`telemetry-setup`** | Instrument your agent so each turn streams to the Guardian. |
 | 🩹 **`remediation`** | Show remediations with their ChatSee status, approve the waiting ones, apply the Implemented ones. |
 | 🛠️ **`structural-correction`** | Diagnose deeper *code* bugs and propose fixes. |
@@ -45,8 +46,8 @@ Every step is **transparent and developer-invoked** — you ask, see the evidenc
 
 ## How the skills work
 
-The plugin installs two things: the **ChatSee MCP server** (the connection, with six tools:
-`list_my_agents`, `ask_guardian`, `list_remediations`, `approve_remediation`,
+The plugin installs two things: the **ChatSee MCP server** (the connection, with seven tools:
+`list_my_agents`, `create_agent`, `ask_guardian`, `list_remediations`, `approve_remediation`,
 `get_remediations`, `apply_remediations`) and the **four
 skills** (instructions that tell your coding agent how to do a whole job with those tools). A
 single lookup such as *"list my ChatSee agents"* just calls a tool; a multi-step job follows a
@@ -54,13 +55,38 @@ skill.
 
 **Signing in.** The first time the editor uses ChatSee, your browser opens on ChatSee: sign in,
 click **Continue**, then **Allow**. The editor sees only the agents your ChatSee account can see.
+
+**No account yet?** Ask *"set up ChatSee for this project"* (`chatsee-account`). With no browser
+and no sign-up form, it:
+
+1. asks you to name the organisation and to accept ChatSee's Terms of Service and Privacy Policy;
+2. creates the organisation (Free plan) and an agent, and writes `CHATSEE_AGENT_ID`,
+   `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY` and `CHATSEE_API_URL` to `.env`
+   (and makes sure `.env` is gitignored);
+3. wires your bot's telemetry (`telemetry-setup`) and confirms ChatSee is receiving it;
+4. gives you a **claim link** (valid 72 hours). Open it, enter your work email and the 6-digit
+   code ChatSee sends, and the organisation is yours. No password is needed (set one later with
+   *Forgot password*). Unclaimed organisations are deleted after 72 hours.
+
+Until it's claimed, the organisation can only **receive** conversations: nobody can read them.
+After claiming, sign in from the editor as above (you're already signed in, so just **Continue**
+and **Allow**) and the other skills work. The commands the skill runs:
+
+```bash
+python skills/chatsee-account/scripts/agent_signup.py signup --org "<organisation>" --agent "<agent name>" --accept-terms
+python skills/chatsee-account/scripts/agent_signup.py check   # 0 healthy, 2 no events yet, 1 needs attention
+```
+
+The ChatSee address comes from the ChatSee server in `.mcp.json` (or pass `--api https://<host>/api`).
 This replaces the ChatSee API key only: your coding agent itself still needs its own sign-in or
 API key (Claude account, OpenAI sign-in, Google sign-in or Gemini API key, GitHub Copilot access).
 
 **The loop, end to end:**
 
-1. **Create the agent in ChatSee** (portal: **Settings → Add agent**, type *interaction* +
-   *custom*). That gives it its IDs. The skills can't create agents.
+1. **Create the agent in ChatSee.** Ask your coding agent (*"create a ChatSee agent called
+   Support Bot"*), which calls `create_agent` (Admin role), or add it in the portal
+   (**Settings → Add agent**, type *interaction* + *custom*). That gives it its IDs.
+   `telemetry-setup` also offers to create it when your agent isn't in ChatSee yet.
 2. **`telemetry-setup`** adds the official `chatsee-ai` SDK to your agent's code. It gets the
    agent's `agent_id`, `tenant_id` and environment from your account via `list_my_agents` (no
    key), installs the SDK, writes them to the project's `.env` (and checks `.env` is
@@ -183,6 +209,42 @@ gemini extensions install https://github.com/ChatSee/Chatsee-Skills --ref chatse
 Then sign in from inside Gemini: `/mcp auth chatsee`. Confirm with `/mcp`; you want
 `chatsee … Connected`.
 
+### 🟡 OpenCode
+
+OpenCode reads the skills from `.claude/skills/` and the server from `opencode.json`, both in
+this repository. Use **OpenCode v2** (`npm i -g @opencode/cli`) and run it from a clone, in
+**Windows Terminal or PowerShell** (plain cmd can't draw OpenCode's screen):
+
+```bash
+git clone -b chatsee-qa https://github.com/ChatSee/Chatsee-Skills.git
+cd Chatsee-Skills
+opencode mcp list          # chatsee  needs authentication
+opencode mcp auth chatsee  # browser: ChatSee → Continue → Allow
+opencode                   # then: "which ChatSee agents can I see?"
+```
+
+To use it in your own project, copy `.claude/skills/` and `opencode.json` there. OpenCode v2
+expects servers under `"mcp": {"servers": {…}}`; the v1 shape (`"mcp": {"chatsee": …}`) is
+ignored without an error. Sign out with `opencode mcp logout chatsee`.
+
+### 🟠 Google Antigravity (IDE and `agy` CLI)
+
+Install the repository as an Antigravity plugin, from a clone:
+
+```bash
+git clone -b chatsee-qa https://github.com/ChatSee/Chatsee-Skills.git
+agy plugin install "<full path to>/Chatsee-Skills"   # 4 skills, 1 MCP server
+agy plugin list                                      # chatsee-skills (enabled)
+```
+
+On Windows `agy` is `%LOCALAPPDATA%\agy\bin\agy.exe` (cmd) or `$env:LOCALAPPDATA\agy\bin\agy.exe`
+(PowerShell). If the install says *Access is denied*, close the Antigravity app and run it again.
+Restart Antigravity, open your project, then type `/plugin` → **chatsee-skills** → **Sign in**
+(or ask *"list my ChatSee agents"*): browser → ChatSee → **Continue** → **Allow**.
+
+Alternatively, per project: copy `.agents/skills/` and `.agents/mcp_config.json` into the
+project root; Antigravity (and Devin, for the skills) picks them up from there.
+
 ### ⚫ Cursor and 🐙 GitHub Copilot (VS Code)
 
 These editors have no plugin installer, so the repository includes one. In a terminal (cmd,
@@ -263,6 +325,8 @@ Create `.env` at your repo root (see [`.env.example`](.env.example)), **add it t
 | `.claude/skills/` | Claude Code (project) | generated mirror |
 | `.cursor/` | Cursor | generated mirror + config |
 | `.github/` | GitHub Copilot | generated mirror + config |
+| `.agents/` | Antigravity, Devin | generated mirror + `mcp_config.json` (Antigravity) |
+| `opencode.json` | OpenCode | config; skills from `.claude/skills/` |
 
 ```bash
 python build.py            # regenerate every bundle
@@ -310,6 +374,7 @@ python skills/guardian-query/scripts/startup_check.py --only severity,impact --h
 
 Just talk to your coding agent:
 
+- *"Set up ChatSee for this project."* (no account yet: organisation + agent + telemetry, claim later)
 - *"What's my agent breaking today?"*
 - *"Pull the latest remediations and apply them."*
 - *"Why is error code E-402 happening?"*

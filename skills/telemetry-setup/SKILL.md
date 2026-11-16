@@ -12,7 +12,12 @@ skills 2–4 can act on it.
 **Subject = the agent's real end-user conversations**, never the Claude Code session.
 
 ## First: is ChatSee connected?
-Use the ChatSee MCP tools (`list_my_agents`, `ask_guardian`, `list_remediations`, `get_remediations`,
+**Set up by skill 0 (chatsee-account)?** If the project's `.env` already has
+`CHATSEE_AGENT_ID`, `CHATSEE_TENANT_ID` and `CHATSEE_ENV` (written by the agent sign-up),
+use them and go straight to the steps: sending telemetry needs only those ids, and an
+organisation that hasn't been claimed yet can't sign in anyway.
+
+Otherwise use the ChatSee MCP tools (`list_my_agents`, `create_agent`, `ask_guardian`, `list_remediations`, `get_remediations`,
 `apply_remediations`). If they are missing, or a call fails with an authentication error,
 **stop and tell the developer to sign in**, then retry:
 - Claude Code: `/mcp` → the ChatSee server → **Authenticate**
@@ -76,7 +81,11 @@ if ChatSee is unreachable the agent keeps serving users.
    **`list_my_agents`** tool: it returns `tenant_id`, the SDK `environment` this ChatSee
    serves, and the agents the signed-in person can reach, each with its `agent_id`. If it
    lists several agents, ask which one this code is — never pick. If the agent isn't listed,
-   it hasn't been added to ChatSee yet (see *Getting the ids*). **Never write a default
+   it hasn't been added to ChatSee yet: offer to create it. Ask the developer for the name
+   (suggest one from the project, e.g. the repo or bot name), and only on their yes call
+   **`create_agent`** with it. It returns the new `agent_id`, `tenant_id` and `environment`;
+   use those. It needs the Admin role in ChatSee; if it refuses, pass on its message (an Admin
+   can create the agent, or the developer can in the portal, see *Getting the ids*). **Never write a default
    environment** — a plausible guess silently ships production traffic to the wrong ChatSee,
    and is invisible in whichever environment the default happens to match. If
    `list_my_agents` returns no `environment`, ask.
@@ -184,7 +193,8 @@ deliberately no stubbed variant: a canned agent proves only that a POST succeeds
 ## Getting the ids
 
 Signed in with ChatSee, `list_my_agents` gives them (step 3). For an agent that doesn't
-exist in ChatSee yet, someone adds it first:
+exist in ChatSee yet, `create_agent` adds it from the editor (Admin role). Or add it in the
+portal:
 
 ChatSee portal → **Settings → Add agent** → name it, type **interaction** + **custom** → Add.
 The ids are minted there. (`POST /v1/agents/register_agent` does the same over REST, for a

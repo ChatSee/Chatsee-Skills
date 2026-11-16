@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "servers": {
+      "chatsee": {
+        "type": "remote",
+        "url": "https://qa.chatsee.ai/mcp/"
+      }
+    }
+  }
+}
