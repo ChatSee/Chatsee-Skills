@@ -1,6 +1,6 @@
 ---
 name: structural-correction
-description: Diagnose a monitored agent's deeper, code-level failures (context-window handling, tool wiring, control flow, memory growth) from the ChatSee Guardian's data, then propose a code fix for developer approval. For failures a prompt tweak can't fix — the counterpart to skill 2 (prompt-level). Always scoped to one named agent. (Skill 3 of 4.)
+description: Diagnose a monitored agent's deeper, code-level failures (context-window handling, tool wiring, control flow, memory growth) from the ChatSee Guardian's data, then propose a code fix for developer approval. For failures a prompt tweak can't fix — the counterpart to skill 2 (prompt-level). Use when the developer asks to fix an error such as the agent forgetting earlier parts of the conversation (antecedent loss, truncation), calling the wrong tool, looping or crashing. Always scoped to one named agent. (Skill 3 of 4.)
 ---
 
 # Structural correction (skill 3)
@@ -62,9 +62,31 @@ about a different one** — a bug this skill once had. So every question names t
    length, the wrong tool called, a loop that won't terminate. Anything fixable by telling
    the model to behave differently is **prompt-level → hand to skill 2**. When unsure,
    prefer skill 2.
-3. **Locate** the cause in the agent's code.
-4. **Propose a fix** as a concrete edit, citing the Guardian evidence.
-5. **Apply only with developer approval** (propose-only by default).
+3. **Locate** the cause in the agent's code: the exact file, line and setting. Read the
+   code path end to end (where history is built, trimmed and sent) and confirm the cause
+   explains the evidence, e.g. "the order number is in turn 1; by turn 7 the history is
+   over 500 tokens, so turn 1 is dropped before the model call". A prompt line such as
+   "remember the order" cannot fix a turn the code never sends.
+4. **Propose ONE fix: the smallest change that removes the cause.** Keep it short and
+   concrete, no essays. Reply in this shape:
+   - **Cause** (one or two lines, citing the Guardian evidence: error code, what happened).
+   - **Where**: `file:line`, and the current line(s) as they are now.
+   - **Fix**: the before/after lines (a small diff).
+   - **Alternatives**: at most two, one line each (e.g. "summarise old turns instead of
+     dropping them"), not implemented.
+   - Ask: *"Apply this fix?"*
+
+   Fix the root cause the way the code already works: if a configured limit is too small,
+   change the limit; don't add a new subsystem (summarisers, caches, retries, rewrites)
+   unless the developer picks that alternative or the small fix can't work.
+5. **Apply only with developer approval** (propose-only by default). After applying, show a
+   **change log**: each file changed and the before/after of each changed line.
+6. **Verify with ONE quick sanity check, not a test suite.** Re-run just the conversation or
+   command that showed the failure, **once**, and report the one line that proves the fix
+   (e.g. "turn 7: Sam still has WM-7001 and starts the return"). Don't write new tests,
+   don't run the full suite, don't repeat runs, don't rebuild or redeploy unless asked. If
+   the agent calls a paid model or real tools, ask before running it, or give the
+   developer the one command to run.
 
 ## Tools, and the fallback script
 `ask_guardian` fetches the Guardian's view of one agent. That is all it does — the diagnosis,

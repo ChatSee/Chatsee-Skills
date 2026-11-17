@@ -1,6 +1,6 @@
 ---
 name: remediation
-description: Show an agent's ChatSee remediations with their portal status (Open, Proposed, In progress, Implemented), let the developer approve the ones waiting for approval, fold the approved (Implemented) rules into that agent's system prompt, then confirm them applied. The transparent, developer-invoked form of the closed loop, for prompt-level fixes. (Skill 2 of 4.)
+description: Show an agent's ChatSee remediations with their portal status (Open, Proposed, In progress, Implemented), let the developer approve the ones waiting for approval, fold the approved (Implemented) rules into that agent's system prompt, then confirm them applied. The transparent, developer-invoked form of the closed loop, for prompt-level fixes. Use when the developer asks to fix a behaviour error ChatSee found, such as PII exposure, policy violations, tone or incomplete answers. (Skill 2 of 4.)
 ---
 
 # Remediation (skill 2)
@@ -95,12 +95,18 @@ tooling"* and the MCP call is only the acknowledgement. **You are the local tool
    what makes the next apply replace the block instead of stacking a second copy. If the format
    cannot carry them (a database column, a console text box), say so, and expect to replace the
    whole managed section by hand next time.
-2. **Show the diff before writing.** Non-negotiable — this edits what the agent says to every
+2. **Remove what causes the error, don't just add a rule on top.** Read the whole prompt
+   first. If an existing instruction contradicts the rule (e.g. the rule says "never read
+   personal details back" and the prompt says "if asked, read their details back"),
+   **replace or delete that instruction in the same change** and say so: *"Removed the line
+   telling Sam to read details back; it caused the PII exposure."* A prompt that keeps both
+   gives the model two orders, and the error comes back.
+3. **Show the diff before writing.** Non-negotiable — this edits what the agent says to every
    customer.
-3. **Verify the file still loads.** Re-parse the YAML, re-import the module, re-run the agent
-   once. A prompt file that no longer parses takes the agent down.
-4. **Back up first** if you are not editing something under version control.
-5. **Then acknowledge** with the `apply_remediations` tool, or the loop stays open and
+4. **Verify the file still loads.** Re-parse the YAML or re-import the module. That is a
+   sanity check, not a test run. A prompt file that no longer parses takes the agent down.
+5. **Back up first** if you are not editing something under version control.
+6. **Then acknowledge** with the `apply_remediations` tool, or the loop stays open and
    ChatSee still believes the fix was never applied.
 
 ### The shortcut
@@ -185,17 +191,25 @@ instead and **defaults to `all`**. `list_remediations` changes nothing.
    effect, that is a decision for the portal (mark it Regressed), not something to drop
    silently here.
 5. **Apply.** Save that output as JSON to `.chatsee/rules.json` beside the agent's code. Find
-   the prompt. For a prose file or a Python literal, run
+   the prompt, read all of it, and find any instruction that contradicts the rules (rule 2
+   above): the fix replaces those, and the diff shows the removal. For a prose file or a Python literal, run
    `apply_to_prompt.py <prompt-file> --rules-file .chatsee/rules.json` and show the diff;
    nothing is written. For any other shape, edit by hand following the rules above. Then
    apply with `--write` (between `<!-- chatsee:failure-memory:start/end -->` markers;
-   re-running replaces the block, never duplicates it). Each apply appends a record to
+   re-running replaces the block, never duplicates it). The script only adds the rules
+   block: remove or rewrite contradicting instructions yourself, in the same change. Each apply appends a record to
    `.chatsee/applied.jsonl`.
 6. **Confirm.** Once the rules are truly in place, call `apply_remediations` with the
    `failure_memory_ids` and a note saying what changed.
    ⚠️ **State-changing:** records each one as in the prompt (`Applied`).
 7. **Close.** Call `list_remediations` again and show the updated table, so the developer
    sees the same statuses the portal now shows.
+8. **Verify, only if asked, with ONE quick sanity check.** Re-run just the conversation that
+   showed the failure, once, and quote the one reply that proves the rule works. No test
+   suites, no repeated runs, no rebuild or redeploy (a prompt file read on every turn needs
+   no restart). Ask before running an agent that calls a paid model or real tools.
+
+Keep every reply short: the table, the diff, one line of result. No long explanations.
 
 ## Closed-loop alignment
 Approving sets the portal status to Implemented (`implemented`); applying moves the

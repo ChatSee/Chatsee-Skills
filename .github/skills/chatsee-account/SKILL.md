@@ -13,7 +13,14 @@ from coding agents.
 
 Until it is claimed the organisation can only **receive** conversations. Nobody can read
 them (no dashboard, no Guardian answers, no remediations) until a verified person owns it.
-Unclaimed organisations are deleted after 72 hours.
+**An unclaimed organisation is permanently deleted after 3 days: the organisation, its agent,
+its account and every conversation it received.** Say this in plain words every time you
+mention the claim link, with the date.
+
+## How to talk to the developer: a conversation, not a manual
+Most developers arrive knowing nothing about ChatSee. Never paste a wall of instructions.
+Do one stage at a time, say in one line what just happened, and **end every message with
+the single recommended next step** as a yes/no question. Keep messages short.
 
 ## 1. Already set up?
 - If the project's `.env` has `CHATSEE_AGENT_ID`, it is already connected: say so and stop.
@@ -21,21 +28,27 @@ Unclaimed organisations are deleted after 72 hours.
 - If the ChatSee MCP tools work (`list_my_agents` answers), the developer already has an
   account: use it (offer `create_agent` and skill 1, telemetry-setup) and stop.
 
-## 2. Ask for the terms (always), then create it
-**Always ask this as its own question and wait for the answer, even when the developer has
-already given a name or said "set up ChatSee":**
+## 2. Suggest names, ask for the terms (always), then create it
+Don't make the developer invent names. Get defaults with:
 
-> Before I create it: do you accept ChatSee's
-> [Terms of Service](https://www.chatsee.ai/terms-of-service) and
+```bash
+python <this skill>/scripts/agent_signup.py suggest
+```
+
+Use names the developer already gave instead of the defaults. Then ask **one** message and
+wait for the answer, **even when the developer has already given names or said "set up
+ChatSee"**:
+
+> I'll create a free ChatSee organisation **<org>** with the agent **<agent>**
+> (say if you want different names).
+> Do you accept ChatSee's [Terms of Service](https://www.chatsee.ai/terms-of-service) and
 > [Privacy Policy](https://www.chatsee.ai/privacy-policy)? (yes / no)
 
 - Asking for a ChatSee account, naming the organisation, or saying "go ahead" is **not**
   acceptance. Only an explicit yes to *this* question is. Never assume it, never answer it
   for them, and never pass `--accept-terms` without it. On no, stop: nothing is created.
-- If they haven't named the organisation, ask for that too (suggest their company or
-  project name). It can go in the same message as the terms question.
+- If they answer with new names, use them; a yes with no names keeps the defaults.
 
-Name the agent after their bot or repo (for example "Returns Bot"); mention the name you chose.
 From the project root, run:
 
 ```bash
@@ -45,7 +58,11 @@ python <this skill>/scripts/agent_signup.py signup --org "<organisation>" --agen
 It picks the ChatSee address from the ChatSee server in `.mcp.json` (pass
 `--api https://<host>/api` if there is none). It writes `CHATSEE_AGENT_ID`,
 `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY` and `CHATSEE_API_URL` to `.env`,
-makes sure `.env` is gitignored, and prints the **claim link**. It never prints the setup key.
+makes sure `.env` is gitignored, and prints the **claim link** and its deadline. It never
+prints the setup key.
+
+Then reply in two or three lines: created (names, Free plan), the 3-day deletion warning
+with the date, and the next step as a question (step 3).
 
 On HTTP 429 it says how long to wait: wait once and retry once, never loop.
 
@@ -77,10 +94,13 @@ The check shows counts only, never conversation content.
 Show the claim link **in the chat only** (never write it to a file, commit or log): whoever
 opens it first and confirms an email owns the organisation. Tell the developer:
 
-> "ChatSee is receiving your bot's conversations. Open this link within 3 days to claim
-> your organisation: enter your work email, choose a password and enter the code we send.
-> Then you can see what
-> ChatSee finds."
+> "ChatSee is receiving your bot's conversations. Open this link to claim your
+> organisation: enter your work email, choose a password and enter the code we send.
+> **If it isn't claimed by <date>, the organisation, its agent, its account and all its
+> conversations are permanently deleted.** Once claimed, you can see what ChatSee finds."
+
+Then recommend the next step: *"Once you've claimed it, shall I connect Claude Code to your
+organisation so you can ask what ChatSee found?"* (step 6).
 
 ## 6. After they claim
 Reading data needs the developer's own sign-in, once:
@@ -90,7 +110,8 @@ Reading data needs the developer's own sign-in, once:
 - Gemini CLI: `/mcp auth chatsee` · Codex: `codex mcp login <server name>`, then restart ·
   Cursor / VS Code: the ChatSee entry in the MCP settings → **Connect** / **Start**.
 
-Then skills 2-4 work: ask the Guardian (guardian-query), review fixes (remediation), code
+Then recommend one thing to try, for example *"Ask me: what are the top errors for
+<agent>?"*. Skills 2-4 work from here: ask the Guardian (guardian-query), review fixes (remediation), code
 fixes (structural-correction). Failures appear a few minutes to about an hour after the
 conversations, so "no errors yet" right after setup is normal.
 

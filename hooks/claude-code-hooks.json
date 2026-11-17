@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 10,
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/next_step.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/hooks/next_step.py\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -59,10 +59,37 @@ may omit `agent_name` to ask about the whole organization.
 
 ## Steps
 1. If the agent isn't obvious, call `list_my_agents`.
-2. Call `ask_guardian` with the question and `agent_name`.
-3. Present the answer concisely. Pass the returned `session_id` back to `ask_guardian`
-   to ask a follow-up in the same Guardian conversation.
-4. To fix something: hand off to skill 2 (prompt-level) or skill 3 (structural).
+2. Call `ask_guardian` with the question and `agent_name`. For "what's wrong / top errors",
+   ask for evidence too, e.g. *"Top error codes in the last 7 days with counts, and for each
+   one example session: what the customer said and what the agent replied."* Pass the
+   returned `session_id` back to ask follow-ups in the same Guardian conversation.
+3. **Present errors so the important ones stand out.** One table, most serious first
+   (privacy/security leaks, then wrong or lost information, then quality):
+
+   | | Error | Count | What happened (real example) | Fix |
+   |---|---|---|---|---|
+   | 🔴 | **PII Exposure** (`POL_..`) | 3 | Customer gave an email; agent read back card number and address | **Prompt fix** (skill 2) |
+   | 🔴 | **Antecedent loss** (`UND_06`) | 2 | Order WM-7001 given on turn 1; on turn 7 the agent asked for it again | **Code fix** (skill 3) |
+   | 🟡 | Partial answer (`RES_..`) | 1 | ... | Prompt fix |
+
+   - 🔴 for errors that harm a customer or the business (leaks, lost or wrong data), 🟡 for
+     the rest. **Bold** the error names. If the developer asked about a specific problem
+     ("the PII issue", "forgets the order"), put that row first.
+   - The example is the evidence: a short paraphrase or quote from the Guardian's answer,
+     never invented. If the Guardian gave none, write "no example given".
+   - **Fix** says which kind, using the routing below, so the developer sees *why* one
+     error is a prompt change and another a code change.
+   - Below the table, one line per 🔴 error: *the cause in plain words*. Then end with:
+     *"Shall I fix <error 1> (prompt) and <error 2> (code)?"*
+4. **When the developer says "fix it / fix these errors"**, route each error and fix it
+   properly, one at a time:
+   - **Prompt fix** (the model chose to do the wrong thing: leaking details, policy, tone,
+     incomplete answers) → skill 2, **remediation**.
+   - **Code fix** (the code made the right answer impossible: history trimmed or too small a
+     context window, a wrong or missing tool, a loop, a crash) → skill 3,
+     **structural-correction**.
+   - After each fix, rerun just the conversation that failed, once, and show the reply
+     **before and after**. That is the proof the error is fixed.
 
 **Only if the tools aren't available** (an API-key setup with no sign-in), fall back to
 `query_guardian.py [--agent "<name>"] "<question>"`, which reads `CHATSEE_MCP_KEY`.

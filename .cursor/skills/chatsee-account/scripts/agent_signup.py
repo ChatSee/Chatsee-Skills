@@ -3,6 +3,10 @@
 
     python agent_signup.py signup --org "<organisation>" --agent "<agent name>" --accept-terms [--api URL]
     python agent_signup.py check  [--api URL]
+    python agent_signup.py suggest
+
+suggest Prints default organisation and agent names for this project (no network), for the
+        developer to accept or override.
 
 signup  Calls ChatSee's agent sign-up. Writes CHATSEE_AGENT_ID, CHATSEE_TENANT_ID,
         CHATSEE_ENV, CHATSEE_SETUP_KEY and CHATSEE_API_URL to ./.env, makes sure .env is
@@ -122,6 +126,15 @@ def message(body: dict) -> str:
     return m if isinstance(m, str) else json.dumps(body)[:300]
 
 
+def nice_date(iso: str | None) -> str:
+    """2026-11-19T11:52:54.953 -> 19 Nov 2026, 11:52 UTC (the raw text if it doesn't parse)."""
+    from datetime import datetime
+    try:
+        return datetime.fromisoformat(str(iso).replace("Z", "")[:19]).strftime("%d %b %Y, %H:%M UTC")
+    except ValueError:
+        return f"{iso} UTC"
+
+
 def cmd_signup(a: argparse.Namespace) -> int:
     env = read_env()
     if env.get("CHATSEE_AGENT_ID"):
@@ -143,7 +156,8 @@ def cmd_signup(a: argparse.Namespace) -> int:
     print(f"  agent_id    {body['agent_id']}")
     print(f"  environment {body['environment']}")
     print(f"Saved to .env: {', '.join(KEYS)}" + (" (and added .env to .gitignore)" if added else " (.env is gitignored)"))
-    print(f"Claim by {body['expires_at']} (UTC), or the organisation is deleted.")
+    print(f"NOT CLAIMED YET: unless it is claimed by {nice_date(body['expires_at'])}, 3 days from now, the "
+          "organisation, its agent, its account and every conversation it received are permanently deleted.")
     print("CLAIM LINK (show only to the developer; never write it to a file or commit):")
     print(body["claim_url"])
     return 0
@@ -161,9 +175,35 @@ def cmd_check(a: argparse.Namespace) -> int:
         print(f"Integration check failed (HTTP {status}): {message(body)}")
         return 1
     state = body["status"]
-    claimed = "claimed" if body.get("claimed") else f"not claimed yet (claim by {body.get('expires_at')} UTC)"
+    claimed = "claimed" if body.get("claimed") else f"NOT claimed yet: claim by {nice_date(body.get('expires_at'))} or it is permanently deleted"
     print(f"status: {state}  events received: {body['events_received']}  last: {body.get('last_event_at') or '-'}  org: {claimed}")
     return {"healthy": 0, "no_events": 2}.get(state, 1)
+
+
+_WORDS = ("Amber", "Bright", "Cedar", "Coral", "Lunar", "Maple", "Nova", "Orbit", "Pine", "Quartz", "Silver", "Swift")
+_GENERIC = {"src", "app", "code", "project", "demo", "test", "tmp", "repo", "workspace", "documents", "desktop"}
+
+
+def _title(name: str) -> str:
+    return " ".join(w.capitalize() for w in re.split(r"[-_\s.]+", name) if w)
+
+
+def cmd_suggest(_: argparse.Namespace) -> int:
+    """Default names, so the developer only has to say yes (or give their own)."""
+    import random
+    root = Path.cwd()
+    words = [w for w in re.split(r"[-_\s.]+", root.name.lower()) if w]
+    org = _title(root.name) if words and not set(words) <= _GENERIC else f"{random.choice(_WORDS)} {random.choice(_WORDS)}"
+    if not org.lower().endswith(("org", "inc", "labs", "team")):
+        org += " Org"
+    # The bot: a sub-folder holding agent-like code, else the project itself.
+    bot = next((d.name for d in sorted(root.iterdir()) if d.is_dir() and not d.name.startswith((".", "_"))
+                and any((d / f).exists() for f in ("agent.py", "main.py", "app.py", "bot.py", "index.js", "index.ts"))), None)
+    agent = _title(bot) if bot else _title(root.name) or "My"
+    if "agent" not in agent.lower() and "bot" not in agent.lower():
+        agent += " Agent"
+    print(json.dumps({"org": org, "agent": agent}))
+    return 0
 
 
 def main() -> int:
@@ -179,8 +219,9 @@ def main() -> int:
     s.add_argument("--api")
     c = sub.add_parser("check")
     c.add_argument("--api")
+    sub.add_parser("suggest")
     a = p.parse_args()
-    return cmd_signup(a) if a.cmd == "signup" else cmd_check(a)
+    return {"signup": cmd_signup, "check": cmd_check, "suggest": cmd_suggest}[a.cmd](a)
 
 
 if __name__ == "__main__":

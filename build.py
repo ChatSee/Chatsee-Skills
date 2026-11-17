@@ -79,6 +79,11 @@ DESCRIPTION = (
 MIRRORS = (".claude/skills", ".cursor/skills", "platforms/gemini/skills", ".github/skills", ".agents/skills")
 
 STARTUP_SCRIPT = "skills/guardian-query/scripts/startup_check.py"
+# python3 first (macOS/Linux), then python (Windows); silent if neither exists.
+NEXT_STEP_CMD = (
+    'python3 "${CLAUDE_PLUGIN_ROOT}/hooks/next_step.py" 2>/dev/null'
+    ' || python "${CLAUDE_PLUGIN_ROOT}/hooks/next_step.py" 2>/dev/null || true'
+)
 
 
 # ── auth ────────────────────────────────────────────────────────────────────
@@ -135,6 +140,23 @@ def build_claude(target: Path) -> None:
             "keywords": ["chatsee", "observability", "agent-reliability", "remediation", "guardian", "mcp"],
             "skills": "./skills/",
             "mcpServers": "./.mcp.json",
+            "hooks": "./hooks/claude-code-hooks.json",
+        },
+        target,
+    )
+    # Claude Code only: after install, the first session tells the developer the next step
+    # (hooks/next_step.py). Its own file, not hooks/hooks.json, which Antigravity parses.
+    write_json(
+        "hooks/claude-code-hooks.json",
+        {
+            "hooks": {
+                "SessionStart": [
+                    {
+                        "matcher": "startup|clear",
+                        "hooks": [{"type": "command", "timeout": 10, "command": NEXT_STEP_CMD}],
+                    }
+                ]
+            }
         },
         target,
     )
@@ -410,6 +432,7 @@ def check() -> int:
             ".claude-plugin/plugin.json",
             ".mcp.json",
             "hooks/hooks.json",
+            "hooks/claude-code-hooks.json",
             ".codex-plugin/plugin.json",
             "platforms/gemini/gemini-extension.json",
             ".cursor/mcp.json",
