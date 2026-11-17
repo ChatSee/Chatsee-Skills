@@ -26,28 +26,46 @@ the single recommended next step** as a yes/no question. Keep messages short.
 - If the project's `.env` has `CHATSEE_AGENT_ID`, it is already connected: say so and stop.
   Don't create a second organisation.
 - If the ChatSee MCP tools work (`list_my_agents` answers), the developer already has an
-  account: use it (offer `create_agent` and skill 1, telemetry-setup) and stop.
+  account: say which organisation you're signed in to and ask *"Use this organisation, or
+  create a new one?"* On "use it", offer `create_agent` and skill 1 (telemetry-setup) and
+  stop. On "new", continue with step 2.
 
-## 2. Suggest names, ask for the terms (always), then create it
-Don't make the developer invent names. Get defaults with:
+## 2. Ask the three questions, one at a time, then create it
+Nothing is created until the developer has answered **all three** questions below, each in
+its own message. Ask one, **stop and wait for the answer**, then ask the next. Never fill in
+an answer the developer didn't give, and never treat an answer to one question as an answer
+to another (naming the organisation says nothing about the agent's name or the terms).
+
+**Always** get suggestions first and put them in questions 1 and 2, so the developer can
+just say "ok" (never a made-up example like "Acme"):
 
 ```bash
 python <this skill>/scripts/agent_signup.py suggest
 ```
 
-Use names the developer already gave instead of the defaults. Then ask **one** message and
-wait for the answer, **even when the developer has already given names or said "set up
-ChatSee"**:
+**Question 1, the organisation:**
+> What should I call your ChatSee organisation? (For example your company or team.
+> Say "ok" to use **<suggested org>**.)
 
-> I'll create a free ChatSee organisation **<org>** with the agent **<agent>**
-> (say if you want different names).
-> Do you accept ChatSee's [Terms of Service](https://www.chatsee.ai/terms-of-service) and
+**Question 2, the agent** (only after question 1 is answered):
+> And what should I call the agent, the bot ChatSee will monitor? (Say "ok" to use
+> **<suggested agent>**.)
+
+If the project has a bot folder, suggest a name based on it (e.g. `walmart-agent/` ->
+"Walmart Agent").
+
+**Question 3, the terms** (always, only after question 2 is answered):
+> Last thing before I create **<org>** with the agent **<agent>** on the Free plan: do you
+> accept ChatSee's [Terms of Service](https://www.chatsee.ai/terms-of-service) and
 > [Privacy Policy](https://www.chatsee.ai/privacy-policy)? (yes / no)
 
-- Asking for a ChatSee account, naming the organisation, or saying "go ahead" is **not**
-  acceptance. Only an explicit yes to *this* question is. Never assume it, never answer it
-  for them, and never pass `--accept-terms` without it. On no, stop: nothing is created.
-- If they answer with new names, use them; a yes with no names keeps the defaults.
+- If the developer's first message already gave a name (e.g. "set up ChatSee, call the
+  organisation Walmart Care"), skip only *that* question, still ask the others.
+- If an answer covers more than one question (e.g. "Walmart Care, and call the agent
+  Walmart Care Agent"), use what it says and ask only what is still missing.
+- Only an explicit **yes to question 3** is acceptance. Asking for an account, naming
+  things, or "go ahead" is not. Never assume it, never answer it for them, and never pass
+  `--accept-terms` without it. On no, stop: nothing is created.
 
 From the project root, run:
 
