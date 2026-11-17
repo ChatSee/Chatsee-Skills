@@ -64,7 +64,7 @@ if ChatSee is unreachable the agent keeps serving users.
    there are several entry points, instrument the one real users hit.
 
 2. **Install the SDK** into the interpreter *the agent* runs on:
-   `python -m pip install chatsee-ai`. (Skills 2/3/4 need nothing — standard library only.)
+   `python -m pip install chatsee-ai` (`python3 -m pip ...` on macOS/Linux). (Skills 2/3/4 need nothing — standard library only.)
 
 3. **Get the ids from ChatSee, don't invent them.** If the agent's config already has
    `agent_id`, `tenant_id` and an environment, use those.
@@ -82,7 +82,7 @@ if ChatSee is unreachable the agent keeps serving users.
    serves, and the agents the signed-in person can reach, each with its `agent_id`. If it
    lists several agents, ask which one this code is — never pick. If the agent isn't listed,
    it hasn't been added to ChatSee yet: offer to create it. Ask the developer for the name
-   (suggest one from the project, e.g. the repo or bot name), and only on their yes call
+   (suggest one from the project, e.g. the repo or agent folder name), and only on their yes call
    **`create_agent`** with it. It returns the new `agent_id`, `tenant_id` and `environment`;
    use those. It needs the Admin role in ChatSee; if it refuses, pass on its message (an Admin
    can create the agent, or the developer can in the portal, see *Getting the ids*). **Never write a default

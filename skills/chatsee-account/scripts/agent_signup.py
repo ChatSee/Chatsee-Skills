@@ -156,9 +156,11 @@ def cmd_signup(a: argparse.Namespace) -> int:
     print(f"  agent_id    {body['agent_id']}")
     print(f"  environment {body['environment']}")
     print(f"Saved to .env: {', '.join(KEYS)}" + (" (and added .env to .gitignore)" if added else " (.env is gitignored)"))
-    print(f"NOT CLAIMED YET: unless it is claimed by {nice_date(body['expires_at'])}, 3 days from now, the "
-          "organisation, its agent, its account and every conversation it received are permanently deleted.")
-    print("CLAIM LINK (show only to the developer; never write it to a file or commit):")
+    print(f"Action required: claim this organisation by {nice_date(body['expires_at'])}. To claim it, "
+          "open the claim link, enter your work email and set a password, then confirm the verification "
+          "code ChatSee sends to that email. Organisations not claimed within 3 days are permanently "
+          "deleted, together with their agent, account and all received conversations.")
+    print("Claim link (show only to the developer; never write it to a file or commit):")
     print(body["claim_url"])
     return 0
 
@@ -175,7 +177,7 @@ def cmd_check(a: argparse.Namespace) -> int:
         print(f"Integration check failed (HTTP {status}): {message(body)}")
         return 1
     state = body["status"]
-    claimed = "claimed" if body.get("claimed") else f"NOT claimed yet: claim by {nice_date(body.get('expires_at'))} or it is permanently deleted"
+    claimed = "claimed" if body.get("claimed") else f"not yet claimed (claim by {nice_date(body.get('expires_at'))}; unclaimed organisations are permanently deleted)"
     print(f"status: {state}  events received: {body['events_received']}  last: {body.get('last_event_at') or '-'}  org: {claimed}")
     return {"healthy": 0, "no_events": 2}.get(state, 1)
 
@@ -196,7 +198,7 @@ def cmd_suggest(_: argparse.Namespace) -> int:
     org = _title(root.name) if words and not set(words) <= _GENERIC else f"{random.choice(_WORDS)} {random.choice(_WORDS)}"
     if not org.lower().endswith(("org", "inc", "labs", "team")):
         org += " Org"
-    # The bot: a sub-folder holding agent-like code, else the project itself.
+    # The agent under observation: a sub-folder holding agent-like code, else the project itself.
     bot = next((d.name for d in sorted(root.iterdir()) if d.is_dir() and not d.name.startswith((".", "_"))
                 and any((d / f).exists() for f in ("agent.py", "main.py", "app.py", "bot.py", "index.js", "index.ts"))), None)
     agent = _title(bot) if bot else _title(root.name) or "My"

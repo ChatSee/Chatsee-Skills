@@ -31,7 +31,7 @@ Four skills, one MCP, one loop — **observe → ask what's wrong → fix the pr
 
 | Skill | What it does |
 |-------|--------------|
-| 🆕 **`chatsee-account`** | No ChatSee account yet? Creates your organisation (Free plan) and agent **from the editor, with no sign-up form**, wires your bot's telemetry, confirms data is arriving, and gives you a link to claim it later. |
+| 🆕 **`chatsee-account`** | No ChatSee account yet? Creates your organisation (Free plan) and agent **from the editor, with no sign-up form**, wires telemetry into your agent under observation, confirms data is arriving, and gives you a link to claim it later. |
 | 🛰️ **`telemetry-setup`** | Instrument your agent so each turn streams to the Guardian. |
 | 🩹 **`remediation`** | Show remediations with their ChatSee status, approve the waiting ones, apply the Implemented ones. |
 | 🛠️ **`structural-correction`** | Diagnose deeper *code* bugs and propose fixes. |
@@ -59,14 +59,14 @@ click **Continue**, then **Allow**. The editor sees only the agents your ChatSee
 **No account yet?** Ask *"set up ChatSee for this project"* (`chatsee-account`). With no browser
 and no sign-up form, it:
 
-1. asks you to name the organisation and to accept ChatSee's Terms of Service and Privacy Policy;
+1. asks you, one question at a time, to name the organisation and the agent and to accept ChatSee's Terms of Service and Privacy Policy;
 2. creates the organisation (Free plan) and an agent, and writes `CHATSEE_AGENT_ID`,
    `CHATSEE_TENANT_ID`, `CHATSEE_ENV`, `CHATSEE_SETUP_KEY` and `CHATSEE_API_URL` to `.env`
    (and makes sure `.env` is gitignored);
-3. asks before editing your code, then wires your bot's telemetry (`telemetry-setup`) and
+3. asks before editing your code, then wires telemetry into your agent under observation (`telemetry-setup`) and
    confirms ChatSee is receiving it;
-4. gives you a **claim link** (valid 72 hours). Open it, enter your work email and the 6-digit
-   code ChatSee sends, and choose a password: the organisation is yours, and that email and
+4. gives you a **claim link** (valid 72 hours). Open it, enter your work email and set a password,
+   then confirm the verification code ChatSee sends to that email: the organisation is yours, and that email and
    password sign you in to the ChatSee portal. Unclaimed organisations are deleted after 72 hours.
 
 Until it's claimed, the organisation can only **receive** conversations: nobody can read them.

@@ -1,21 +1,27 @@
 ---
 name: chatsee-account
-description: Set up ChatSee for a developer who has no ChatSee account, entirely from the editor - creates a ChatSee organisation (tenant) on the Free plan with an agent, wires the developer's bot to stream its conversations, confirms data is arriving, and hands over a claim link. Use when a developer asks to set up ChatSee, sign up for ChatSee, create a ChatSee account, organisation, workspace or tenant, or says they don't have a ChatSee account yet. Not for developers who already have an account and just need to sign in. (Skill 0, before the other four.)
+description: Set up ChatSee for a developer who has no ChatSee account, entirely from the editor - creates a ChatSee organisation (tenant) on the Free plan with an agent, wires the developer's agent under observation to stream its conversations, confirms data is arriving, and hands over a claim link. Use when a developer asks to set up ChatSee, sign up for ChatSee, create a ChatSee account, organisation, workspace or tenant, or says they don't have a ChatSee account yet. Not for developers who already have an account and just need to sign in. (Skill 0, before the other four.)
 ---
 
 # Set up ChatSee with no account (skill 0)
 
-The developer gets a ChatSee organisation on the Free plan and an agent, and their bot
-starts streaming conversations to it, **without leaving the editor and without a sign-up
+The developer gets a ChatSee organisation on the Free plan and an agent, and their agent
+under observation (the AI agent whose conversations ChatSee monitors) starts streaming
+conversations to it, **without leaving the editor and without a sign-up
 form**. ChatSee creates the organisation with no owner; the developer claims it later with
-a link (work email, a password and the 6-digit code, about 30 seconds). This is how Raindrop and Axiom onboard
+a link: enter a work email, set a password, then confirm the verification code ChatSee
+sends to that email (about 30 seconds). This is how Raindrop and Axiom onboard
 from coding agents.
 
 Until it is claimed the organisation can only **receive** conversations. Nobody can read
 them (no dashboard, no Guardian answers, no remediations) until a verified person owns it.
 **An unclaimed organisation is permanently deleted after 3 days: the organisation, its agent,
-its account and every conversation it received.** Say this in plain words every time you
-mention the claim link, with the date.
+its account and every conversation it received.** State this every time you mention the
+claim link, with the date, in a calm, professional tone (an action with a deadline, not an
+alarm: no capitals, no "WARNING").
+
+**Wording:** call the developer's AI agent the **agent under observation** (or "your agent"),
+never "bot".
 
 ## How to talk to the developer: a conversation, not a manual
 Most developers arrive knowing nothing about ChatSee. Never paste a wall of instructions.
@@ -36,6 +42,9 @@ its own message. Ask one, **stop and wait for the answer**, then ask the next. N
 an answer the developer didn't give, and never treat an answer to one question as an answer
 to another (naming the organisation says nothing about the agent's name or the terms).
 
+(Commands below say `python`; on macOS or Linux, where `python` is often missing, use
+`python3`.)
+
 **Always** get suggestions first and put them in questions 1 and 2, so the developer can
 just say "ok" (never a made-up example like "Acme"):
 
@@ -48,10 +57,10 @@ python <this skill>/scripts/agent_signup.py suggest
 > Say "ok" to use **<suggested org>**.)
 
 **Question 2, the agent** (only after question 1 is answered):
-> And what should I call the agent, the bot ChatSee will monitor? (Say "ok" to use
-> **<suggested agent>**.)
+> And what should I call the agent under observation, the AI agent ChatSee will monitor?
+> (Say "ok" to use **<suggested agent>**.)
 
-If the project has a bot folder, suggest a name based on it (e.g. `walmart-agent/` ->
+If the project has an agent folder, suggest a name based on it (e.g. `walmart-agent/` ->
 "Walmart Agent").
 
 **Question 3, the terms** (always, only after question 2 is answered):
@@ -79,43 +88,49 @@ It picks the ChatSee address from the ChatSee server in `.mcp.json` (pass
 makes sure `.env` is gitignored, and prints the **claim link** and its deadline. It never
 prints the setup key.
 
-Then reply in two or three lines: created (names, Free plan), the 3-day deletion warning
-with the date, and the next step as a question (step 3).
+Then reply in a few short lines, in this order: created (names, Free plan); the claim
+message from step 5 with the link and date; the next step as a question (step 3).
 
 On HTTP 429 it says how long to wait: wait once and retry once, never loop.
 
 **Never ask for, or type, a password or email in the chat.** None is needed here; the
 developer chooses their password on ChatSee's claim page.
 
-## 3. Stream the bot's conversations (ask first)
+## 3. Stream the agent under observation's conversations (ask first)
 This edits the developer's own code, so **ask before touching it**, even straight after
 step 2: name the file you would change, for example *"Shall I add ChatSee monitoring to
-returns-bot/agent.py?"*, and wait for a yes. On no, stop here and just give the claim link
+walmart-agent/agent.py?"*, and wait for a yes. On no, stop here and just give the claim link
 (step 5). On yes, follow skill 1 (**telemetry-setup**) to add the four ChatSee SDK calls to
-the developer's bot. The ids are already in `.env`, so skill 1 uses them and doesn't need a sign-in.
-As skill 1 says: offer to run the bot, don't just run it (it calls their model and tools).
+the agent under observation. The ids are already in `.env`, so skill 1 uses them and doesn't need a sign-in.
+As skill 1 says: offer to run the agent, don't just run it (it calls their model and tools).
 
-If the developer has no bot yet, skill 1's reference agent works as a first one.
+If the developer has no agent code yet, skill 1's reference agent works as a first one.
 
 ## 4. Confirm data is arriving
-After the bot has handled at least one conversation, wait about 30 seconds and run:
+After the agent under observation has handled at least one conversation, wait about 30 seconds and run:
 
 ```bash
 python <this skill>/scripts/agent_signup.py check
 ```
 
 `status: healthy` with a count means ChatSee is receiving it (exit 0). `no_events` (exit 2)
-means nothing has arrived yet: check the bot actually ran and that `.env` is loaded by it.
+means nothing has arrived yet: check the agent actually ran and that `.env` is loaded by it.
 The check shows counts only, never conversation content.
 
 ## 5. Hand over the claim link
 Show the claim link **in the chat only** (never write it to a file, commit or log): whoever
 opens it first and confirms an email owns the organisation. Tell the developer:
 
-> "ChatSee is receiving your bot's conversations. Open this link to claim your
-> organisation: enter your work email, choose a password and enter the code we send.
-> **If it isn't claimed by <date>, the organisation, its agent, its account and all its
-> conversations are permanently deleted.** Once claimed, you can see what ChatSee finds."
+> **Claim your organisation by <date>.**
+> To take ownership of **<org>**, open the claim link below, enter your work email and set a
+> password, then confirm the verification code ChatSee sends to that email.
+> Organisations that are not claimed within 3 days are permanently deleted, together with
+> their agent, account and all received conversations. Until it is claimed, ChatSee records
+> conversations but they cannot be viewed.
+>
+> Claim link: <link>
+
+Use this wording (or very close to it) every time; keep it professional and calm.
 
 Then recommend the next step: *"Once you've claimed it, shall I connect Claude Code to your
 organisation so you can ask what ChatSee found?"* (step 6).

@@ -4,7 +4,7 @@
 Installing the plugin can't ask questions, so the first session after it does: a developer
 who just installed ChatSee Skills sees what to say next instead of having to read docs.
 
-- Project not connected yet  -> "Say: set up ChatSee" (creates the org + agent, names suggested).
+- Project not connected yet  -> "Say: set up ChatSee" (asks for the org and agent names).
 - Connected by agent sign-up -> claimed or not, and the deletion date if not.
 - Anything goes wrong        -> print nothing. A start-up hint must never break a session.
 
@@ -59,26 +59,29 @@ def main() -> None:
     env = read_env(root)
 
     if not env.get("CHATSEE_AGENT_ID"):
-        msg = ("ChatSee Skills is installed. Next step: say \"set up ChatSee\". I'll create a free "
-               "ChatSee organisation and agent for this project (names suggested, you can change them) "
-               "and connect your bot. Already have a ChatSee account? Run /mcp, pick chatsee, Authenticate.")
+        msg = ("ChatSee Skills is installed. Next step: say \"set up ChatSee\". Claude will create a free "
+               "ChatSee organisation for this project, asking you to confirm each name, and connect your "
+               "agent under observation. Already have a ChatSee account? Run /mcp, select chatsee, then "
+               "Authenticate.")
         ctx = ("ChatSee Skills is installed but this project is not connected to ChatSee yet. If the "
                "developer asks to set up ChatSee, says yes/next/go ahead to this hint, or asks what to do "
-               "next, use the chatsee-account skill (it suggests names and asks one question).")
+               "next, use the chatsee-account skill (it asks for the names and the terms, one question at a time).")
     else:
         try:
             state = claim_state(env)
         except Exception:
             state = None
         if state and not state.get("claimed"):
-            msg = (f"ChatSee: this project's organisation is NOT claimed yet. Open the claim link before "
-                   f"{nice_date(state.get('expires_at'))}, or the organisation, its agent and all its conversations "
-                   f"are permanently deleted. ({state.get('events_received', 0)} conversations received so far.)")
+            msg = (f"ChatSee: action required. Please claim this project's organisation by "
+                   f"{nice_date(state.get('expires_at'))}: open the claim link, enter your work email and set a "
+                   f"password, then confirm the verification code ChatSee sends to that email. Unclaimed "
+                   f"organisations are permanently deleted, together with their agent and all received "
+                   f"conversations ({state.get('events_received', 0)} received so far).")
             ctx = ("The project's ChatSee organisation is unclaimed. Remind the developer to claim it before "
                    "using guardian-query, remediation or structural-correction; reading data needs the claim.")
         else:
             msg = ("ChatSee is connected for this project. Try: \"What are the top errors for my agent?\" "
-                   "(First time? Run /mcp, pick chatsee, Authenticate.)")
+                   "(First time? Run /mcp, select chatsee, then Authenticate.)")
             ctx = "This project is connected to ChatSee (CHATSEE_AGENT_ID in .env)."
 
     print(json.dumps({"systemMessage": msg,
