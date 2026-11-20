@@ -2,7 +2,7 @@
 
 The load-bearing invariant is **the environment always wins**. Loading a file over an
 already-set variable is the bug that made a query about a brand-new agent return a different
-agent's 151 incidents (VALIDATION.md F1), so it is pinned first and hardest.
+agent's 151 incidents, so it is pinned first and hardest.
 
     ./.venv/bin/python -m pytest tests/ -q
 """

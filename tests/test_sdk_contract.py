@@ -7,8 +7,7 @@ package **we do not control**, and it changes.
 
 It already caught us out once. `user_id` was rejected by `0.10.0` and is accepted by
 `0.12.1`, so a note written against the older version read as sloppy when checked against
-the newer one — and a wrong detail in a bug report gets the correct details discounted with
-it (VALIDATION.md P3).
+the newer one — and a wrong detail in a bug report gets the correct details discounted with it.
 
 So these are not tests of our code. They are a tripwire: if the SDK's shape no longer
 matches what we tell people, a test goes red instead of a document quietly going stale.
@@ -43,7 +42,7 @@ def _init_params():
 def test_identity_args_are_the_only_required_ones():
     """Keyless auth: agent_id + tenant_id, and nothing else without a default.
 
-    `telemetry-setup/SKILL.md` and `BRIEF.md` both state this. If the SDK ever adds a
+    `telemetry-setup/SKILL.md` states this. If the SDK ever adds a
     required argument, every instrumented agent breaks at construction.
     """
     required = [
@@ -90,7 +89,7 @@ def test_turn_methods_keep_the_arguments_we_document(method, args):
 
 @pytest.mark.parametrize("arg", ["tenant_name", "api_key"])
 def test_portal_snippet_args_are_still_rejected(arg):
-    """The bug we reported upstream (VALIDATION.md P3, ChatSee-Frontend PR #2208).
+    """The bug we reported upstream.
 
     These two are what actually raise. If the SDK ever adds them, the report is obsolete
     and the PR should be closed rather than left arguing for a fix nobody needs.

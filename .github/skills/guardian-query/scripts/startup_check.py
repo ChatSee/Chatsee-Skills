@@ -232,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # Configured, but we cannot tell which agent to ask about. Unscoped questions get answered
-    # about an arbitrary agent on the tenant (BRIEF.md §4), so asking anyway would report a
+    # about an arbitrary agent on the tenant, so asking anyway would report a
     # different agent's status under this project's name. Worse than saying nothing.
     if not agent:
         _emit(
