@@ -5,7 +5,7 @@
   "contextFileName": "GEMINI.md",
   "mcpServers": {
     "chatsee": {
-      "httpUrl": "https://qa.chatsee.ai/mcp/",
+      "httpUrl": "https://cs.chatsee.ai/mcp/",
       "headers": {},
       "timeout": 600000
     }

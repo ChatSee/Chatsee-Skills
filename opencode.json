@@ -3,7 +3,7 @@
     "servers": {
       "chatsee": {
         "type": "remote",
-        "url": "https://qa.chatsee.ai/mcp/"
+        "url": "https://cs.chatsee.ai/mcp/"
       }
     }
   }

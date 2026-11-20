@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "chatsee": {
-      "serverUrl": "https://qa.chatsee.ai/mcp/"
+      "serverUrl": "https://cs.chatsee.ai/mcp/"
     }
   }
 }

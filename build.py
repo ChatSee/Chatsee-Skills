@@ -51,13 +51,14 @@ CANONICAL = ROOT / "skills"
 
 # ── The two things that change before we publish ────────────────────────────
 # Each environment's sign-in MCP. A branch builds its own environment by default (ENVIRONMENT
-# below: chatsee-dev -> dev, chatsee-qa -> qa), so `build.py --check` passes on that branch;
+# below: chatsee-dev -> dev, chatsee-qa -> qa, chatsee-perf -> perf), so `build.py --check` passes on that branch;
 # `--env` builds another one. main stays on gcp-demo + keys until release (CSA-4027).
 MCP_URLS = {
     "dev": "https://dev-react.chatsee.ai/mcp/",
     "qa": "https://qa.chatsee.ai/mcp/",  # the trailing slash matters: /mcp without it is not routed on QA
+    "perf": "https://cs.chatsee.ai/mcp/",  # perf (GKE): /mcp and /mcp/ are both routed
 }
-ENVIRONMENT = "qa"
+ENVIRONMENT = "perf"
 MCP_URL = MCP_URLS[ENVIRONMENT]
 # Cursor strips the trailing slash from MCP_URL and then rejects the advertised resource, so it
 # gets its own address with nothing to strip. The MCP serves it as the same endpoint.
