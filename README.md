@@ -380,8 +380,6 @@ Just talk to your coding agent:
 - *"Pull the latest remediations and apply them."*
 - *"Why is error code E-402 happening?"*
 
-See **[`DEMO.md`](DEMO.md)** for a scripted walkthrough, and **[`RUN.md`](RUN.md)** for the underlying commands.
-
 Guardian calls take **~10–60s** (`ask_guardian` is agentic). Narrow questions and shorter windows answer faster; the startup set pre-fetches the common ones so they're instant.
 
 ---
@@ -404,20 +402,10 @@ you sign in through the browser. The variables below are optional.
 
 ## Scope, honestly
 
-Skills **1, 2, and 4 run end to end.** Skill 3 (`structural-correction`) is **propose-only** — it pulls code-level failures and drafts a fix, but nothing reports that fix back to the Guardian yet, so there's no regression tracking. The loop is **closed for prompt fixes, open for code fixes.** Full gap list in [`ASSESSMENT.md`](ASSESSMENT.md).
+Skills **1, 2, and 4 run end to end.** Skill 3 (`structural-correction`) is **propose-only** — it pulls code-level failures and drafts a fix, but nothing reports that fix back to the Guardian yet, so there's no regression tracking. The loop is **closed for prompt fixes, open for code fixes.**
 
 Everything runs **live against the real ChatSee Guardian** — there is no mock.
 
----
-
-## Learn more
-
-| Doc | What's in it |
-|-----|--------------|
-| [`BRIEF.md`](BRIEF.md) | Architecture, design rationale, live-test results |
-| [`DEMO.md`](DEMO.md) | Scripted demo — the things to ask |
-| [`ASSESSMENT.md`](ASSESSMENT.md) | Honest gap analysis |
-| [`VALIDATION.md`](VALIDATION.md) | Test evidence |
 
 <div align="center">
 <sub>Built by <a href="https://chatsee.ai">ChatSee</a> · No secrets committed — keys live in env, never in the repo.</sub>

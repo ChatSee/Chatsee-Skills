@@ -9,7 +9,7 @@ anthropic>=0.40
 pytest>=8.0
 
 # Skill 1 OTLP alternative (agent_telemetry.py, for OpenTelemetry-native stacks).
-# UNTESTED: these helpers have no callers yet — see ASSESSMENT.md before relying on them.
+# UNTESTED: these helpers have no callers yet.
 opentelemetry-api>=1.30
 opentelemetry-sdk>=1.30
 opentelemetry-exporter-otlp-proto-http>=1.30

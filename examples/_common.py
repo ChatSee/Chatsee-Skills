@@ -46,7 +46,7 @@ def env_alias() -> str:
     """Environment alias the SDK should be pointed at (`dev`|`qa`|`demo`|`poc`, or a URL).
 
     Read from config rather than from `register_agent`'s response, which returns whatever
-    `CHATSEE_ENV` happens to be set on the pod that served the call (see VALIDATION.md P1/P2).
+    `CHATSEE_ENV` happens to be set on the pod that served the call.
     """
     alias = os.environ.get("CHATSEE_ENV")
     if not alias:
