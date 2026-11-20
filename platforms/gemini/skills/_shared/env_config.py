@@ -8,7 +8,7 @@ So: real environment variables always win, and anything still missing is filled 
 
 **Environment wins, always.** This is not a preference — loading a file over an already-set
 variable is the bug that used to make a query about a brand-new agent return a different
-agent's 151 incidents (VALIDATION.md F1). A caller who exported config gets exactly what they
+agent's 151 incidents. A caller who exported config gets exactly what they
 exported; the file only supplies what is absent.
 
 Sources, highest precedence first:

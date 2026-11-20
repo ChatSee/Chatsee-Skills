@@ -3,7 +3,7 @@
 
 This is step 0 of the enterprise path: a customer creates an agent and gets the identifiers
 their code needs. Every skill then runs from the env file this produces — no ids, keys, or
-URLs are hardcoded anywhere. See RUN.md for the full command list.
+URLs are hardcoded anywhere.
 
     ./.venv/bin/python examples/onboard_agent.py --name "My Agent" --out .env.myagent
     set -a && source .env.myagent && set +a
@@ -41,7 +41,7 @@ def main() -> None:
 
     base, alias = api_base(), env_alias()
     # The generated env file must carry the MCP endpoint, and the server does not reliably
-    # return one (VALIDATION.md P2) — so it has to come from config, not from a default.
+    # return one — so it has to come from config, not from a default.
     mcp_url = os.environ.get("CHATSEE_MCP_URL")
     if not mcp_url:
         sys.exit("set CHATSEE_MCP_URL — it is written into the generated env file")
@@ -75,7 +75,7 @@ def main() -> None:
         print(
             f"  note: server said api_base_url={said!r}, which is neither {alias!r} nor "
             f"{base} — using {alias!r}. Following the response verbatim would send this "
-            "agent's telemetry to the wrong environment (VALIDATION.md P1).",
+            "agent's telemetry to the wrong environment.",
             file=sys.stderr,
         )
     if not data.get("mcp_server_url"):
