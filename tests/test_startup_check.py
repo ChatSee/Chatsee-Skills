@@ -184,7 +184,7 @@ def test_no_findings_means_no_output(monkeypatch, capsys):
 
 
 def test_the_question_is_scoped_to_the_named_agent(monkeypatch):
-    """Scoping is load-bearing: BRIEF.md §4 records the Guardian answering about a different
+    """Scoping is load-bearing: the Guardian has been seen answering about a different
     agent entirely when the question named none."""
     monkeypatch.setenv("CHATSEE_MCP_KEY", "cs-test-key")
     monkeypatch.setenv("CHATSEE_AGENT", "Acme Support Agent")

@@ -143,6 +143,5 @@ scratch for the test. Answers may carry `<redirect index="…">` UI anchors; the
 them.
 
 ⚠️ **The Guardian's own arithmetic is unreliable** — it has reported "1 interaction received"
-for an agent with 16, and "4 structural patterns" followed by a list of 3 (`VALIDATION.md`
-P9/P11). Error codes and counts have held up; interaction totals and self-reported tallies
+for an agent with 16, and "4 structural patterns" followed by a list of 3. Error codes and counts have held up; interaction totals and self-reported tallies
 have not. Quote the codes; sanity-check the totals before repeating them.

@@ -224,7 +224,7 @@ our marker block *is* the "inject the skill into the prompt" step it expects fir
 - **Live-tested ✓, loop closed** — the full `Created → Delivered → Applied` transition has
   run on two agents in two separate tenants, confirmed by the applied id leaving the pending
   set on a re-fetch (not merely a 200 response). Transcript:
-  `tests/fixtures/closed_loop_live.md`; full write-up in `VALIDATION.md`.
+  `tests/fixtures/closed_loop_live.md`.
 - Every apply appends a record to `.chatsee/applied.jsonl` **beside the prompt file**, so the
   history lives in the agent's own repo regardless of where the command was run from.
 - The SDK's alternative REST door (`POST /v1/closed-loop/acknowledge-remediations`) is now
