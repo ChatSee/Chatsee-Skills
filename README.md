@@ -22,8 +22,7 @@ then remediate them in place. Installs into **Claude Code**, **Codex**, **Gemini
 
 > **Branch `chatsee-prod`: ChatSee production.** The MCP is `https://app.chatsee.ai/mcp/`
 > and you **sign in with your ChatSee account**; there is no ChatSee API key to set (your coding agent
-> still needs its own sign-in or API key, as usual). `main` still targets
-> gcp-demo with an MCP key until the sign-in release.
+> still needs its own sign-in or API key, as usual).
 
 ## What you get
 
@@ -339,6 +338,39 @@ you sign in through the browser. The variables below are optional.
 Skills **1, 2, and 4 run end to end.** Skill 3 (`structural-correction`) is **propose-only** — it pulls code-level failures and drafts a fix, but nothing reports that fix back to the Guardian yet, so there's no regression tracking. The loop is **closed for prompt fixes, open for code fixes.**
 
 Everything runs **live against the real ChatSee Guardian** — there is no mock.
+
+---
+
+## What this plugin runs and sends
+
+Installing the plugin adds five things to Claude Code: four skills (instructions plus small
+Python helper scripts) and one remote MCP server. **Nothing runs automatically:** there is no
+session-start hook on this branch, and the plugin collects no analytics about you or your
+Claude Code sessions.
+
+| Part | What it does | What leaves your machine, and where to |
+|------|--------------|----------------------------------------|
+| **ChatSee MCP server** (`https://app.chatsee.ai/mcp/`) | Answers Guardian questions and lists, approves and acknowledges remediations | You sign in with your ChatSee account (OAuth, in the browser). Each tool call sends its arguments to ChatSee over HTTPS: your question, the agent name, remediation IDs and their status. Access is limited to the agents your account can see. |
+| **`telemetry-setup`** | Edits **your agent's** code to add the `chatsee-ai` SDK (from PyPI), and writes the agent's ChatSee IDs to your project's `.env` | Only after you deploy that change: your agent sends each of its user interactions (prompt, answer, tool calls, metadata) to ChatSee over HTTPS with certificate checks on. The skill does not send anything itself. |
+| **`guardian-query`** | Asks the Guardian about your agent's errors | The question and agent name, through the MCP server above |
+| **`remediation`** | Shows ChatSee's proposed prompt fixes, applies the ones you approve to your prompt file, then tells ChatSee they were applied | Approvals and "applied" acknowledgements, through the MCP server. A local record is written to `.chatsee/applied.jsonl` beside the prompt file. |
+| **`structural-correction`** | Diagnoses code-level failures from the Guardian's data and proposes a code change | Questions through the MCP server. The code change is proposed in your editor and applied only if you approve it. |
+
+**Your source code is not uploaded by the plugin.** The skills read and edit files in your
+project locally, through Claude Code, and only when you ask. What reaches ChatSee is what the
+table above lists. The helper scripts use the Python standard library only and talk only to
+the ChatSee server configured in `.mcp.json` (or `CHATSEE_MCP_URL`).
+
+- Privacy policy: <https://www.chatsee.ai/privacy-policy>
+- Terms of service: <https://www.chatsee.ai/terms-of-service>
+- Security issues: please report them privately to **contact@chatsee.ai**, not in a public issue.
+
+---
+
+## License
+
+Apache License 2.0; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The license covers this
+repository only; ChatSee's hosted services are provided under ChatSee's Terms of Service.
 
 
 <div align="center">
