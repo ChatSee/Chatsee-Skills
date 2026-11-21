@@ -47,13 +47,8 @@ ROOT = Path(__file__).resolve().parent
 CANONICAL = ROOT / "skills"
 
 # ── The two things that change before we publish ────────────────────────────
-# Each environment's sign-in MCP. A branch builds its own environment by default (ENVIRONMENT
-# below: chatsee-dev -> dev, chatsee-qa -> qa, chatsee-demo -> demo, chatsee-prod -> prod), so `build.py --check` passes on that branch;
-# `--env` builds another one. main stays on gcp-demo + keys until release (CSA-4027).
+# The sign-in MCP this build connects to (ChatSee production).
 MCP_URLS = {
-    "dev": "https://dev-react.chatsee.ai/mcp/",
-    "qa": "https://qa.chatsee.ai/mcp/",  # the trailing slash matters: /mcp without it is not routed on QA
-    "demo": "https://gcp-demo.chatsee.ai/mcp/",
     "prod": "https://app.chatsee.ai/mcp/",  # trailing slash matters: /mcp without it is not routed on prod
 }
 ENVIRONMENT = "prod"

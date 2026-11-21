@@ -45,7 +45,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import guardian_client as g  # noqa: E402  - after the sys.path insert above
 
 # Long enough for a real agentic answer, short enough that a bad day doesn't stall the editor.
-# Measured 2026-08-13 against gcp-demo: a 24h question took 19s, a 720h one took 99s. So the
+# Measured 2026-08-13 against a ChatSee environment: a 24h question took 19s, a 720h one took 99s. So the
 # window size drives the latency, and 30s only fits because this asks about 24 hours.
 DEFAULT_TIMEOUT = 30
 DEFAULT_HOURS = 24
