@@ -1,7 +1,7 @@
 {
   "name": "chatsee-skills",
-  "version": "1.0.0",
-  "description": "Monitor your AI agent with ChatSee and fix its failures — prompt-level and code-level — from your coding agent. Telemetry setup, Guardian queries, remediations, and structural code fixes over one MCP, plus a startup check that surfaces recent failures.",
+  "version": "1.1.0",
+  "description": "Monitor your AI agent with ChatSee and fix its failures, prompt-level and code-level, from your coding agent: telemetry setup, Guardian queries, remediations and structural code fixes over one MCP. Requires a ChatSee account.",
   "contextFileName": "GEMINI.md",
   "mcpServers": {
     "chatsee": {
