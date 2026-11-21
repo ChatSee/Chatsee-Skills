@@ -267,6 +267,37 @@ Skills **1, 2, and 4 run end to end.** Skill 3 (`structural-correction`) is **pr
 
 Everything runs **live against the real ChatSee Guardian** — there is no mock.
 
+---
+
+## What this plugin runs and sends
+
+Installing the plugin adds four skills (instructions plus small Python helper scripts), one remote MCP server and one session-start hook to Claude Code. **One thing runs automatically:** the session-start hook below, and only when you have set `CHATSEE_MCP_KEY` and `CHATSEE_AGENT`. The plugin collects no analytics about you or your Claude Code sessions.
+
+| Part | What it does | What leaves your machine, and where to |
+|------|--------------|----------------------------------------|
+| **ChatSee MCP server** (`https://gcp-demo.chatsee.ai/mcp/`) | Answers Guardian questions and lists, approves and acknowledges remediations | Authenticated with your ChatSee MCP key from the `CHATSEE_MCP_KEY` environment variable (never stored in the repo). Each tool call sends its arguments to ChatSee over HTTPS: your question, the agent name, remediation IDs and their status. |
+| **`telemetry-setup`** | Edits **your agent's** code to add the `chatsee-ai` SDK (from PyPI), and writes the agent's ChatSee IDs to your project's `.env` | Only after you deploy that change: your agent sends each of its user interactions (prompt, answer, tool calls, metadata) to ChatSee over HTTPS with certificate checks on. The skill does not send anything itself. |
+| **`guardian-query`** | Asks the Guardian about your agent's errors | The question and agent name, through the MCP server above |
+| **`remediation`** | Shows ChatSee's proposed prompt fixes, applies the ones you approve to your prompt file, then tells ChatSee they were applied | Approvals and "applied" acknowledgements, through the MCP server. A local record is written to `.chatsee/applied.jsonl` beside the prompt file. |
+| **`structural-correction`** | Diagnoses code-level failures from the Guardian's data and proposes a code change | Questions through the MCP server. The code change is proposed in your editor and applied only if you approve it. |
+| **Session-start hook** | When Claude Code starts and both `CHATSEE_MCP_KEY` and `CHATSEE_AGENT` are set, asks the Guardian for that agent's recent failures and shows them | The agent name and a fixed question, through the MCP server above. Without those variables it does nothing. |
+
+**Your source code is not uploaded by the plugin.** The skills read and edit files in your
+project locally, through Claude Code, and only when you ask. What reaches ChatSee is what the
+table above lists. The helper scripts use the Python standard library only and talk only to
+the ChatSee server configured in `.mcp.json` (or `CHATSEE_MCP_URL`).
+
+- Privacy policy: <https://www.chatsee.ai/privacy-policy>
+- Terms of service: <https://www.chatsee.ai/terms-of-service>
+- Security issues: please report them privately to **contact@chatsee.ai**, not in a public issue.
+
+---
+
+## License
+
+Apache License 2.0; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The license covers this
+repository only; ChatSee's hosted services are provided under ChatSee's Terms of Service.
+
 
 <div align="center">
 <sub>Built by <a href="https://chatsee.ai">ChatSee</a> · No secrets committed — keys live in env, never in the repo.</sub>

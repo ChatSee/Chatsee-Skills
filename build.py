@@ -50,15 +50,15 @@ CANONICAL = ROOT / "skills"
 MCP_URL = "https://gcp-demo.chatsee.ai/mcp/"
 AUTH_MODE = "bearer-env"  # "bearer-env" today; "oauth" once the MCP server speaks OAuth 2.1
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 KEY_VAR = "CHATSEE_MCP_KEY"
 AGENT_VAR = "CHATSEE_AGENT"
 SERVER_NAME = "chatsee"
 
 DESCRIPTION = (
-    "Monitor your AI agent with ChatSee and fix its failures — prompt-level and code-level — "
-    "from your coding agent. Telemetry setup, Guardian queries, remediations, and structural "
-    "code fixes over one MCP, plus a startup check that surfaces recent failures."
+    "Monitor your AI agent with ChatSee and fix its failures, prompt-level and code-level, from "
+    "your coding agent: telemetry setup, Guardian queries, remediations and structural code fixes "
+    "over one MCP, plus a startup check that surfaces recent failures."
 )
 
 # Hosts that will only read skills from a fixed path, so they get a copy of `skills/`.
@@ -118,6 +118,8 @@ def build_claude(target: Path) -> None:
             "author": {"name": "ChatSee", "url": "https://chatsee.ai"},
             "homepage": "https://github.com/ChatSee/Chatsee-Skills",
             "repository": "https://github.com/ChatSee/Chatsee-Skills",
+            "license": "Apache-2.0",
+            "privacyPolicyUrl": "https://www.chatsee.ai/privacy-policy",
             "keywords": ["chatsee", "observability", "agent-reliability", "remediation", "guardian", "mcp"],
             "skills": "./skills/",
             "mcpServers": "./.mcp.json",
